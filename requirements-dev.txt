@@ -1,0 +1,6 @@
+# Game runtime and portable build have no package dependencies.
+# Only required for real Chromium checks and reproducible asset generators.
+playwright==1.62.0
+Pillow==13.0.0
+numpy==2.3.5
+scipy==1.17.0

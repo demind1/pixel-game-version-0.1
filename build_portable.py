@@ -1,25 +1,50 @@
-"""Bundle source and assets as one browser-openable HTML page (no fetch)."""
+"""Build a self-contained HTML game plus a ZIP. Python stdlib only."""
 from pathlib import Path
-from html import escape
-import base64,json,re
-root=Path(__file__).resolve().parent
-assets=root/'assets'
-source=(root/'index.html').read_text()
-css=(root/'style.css').read_text()
-js=(root/'game.js').read_text()
-images=['xeno_sheet.png','xeno_animation_10x4.png','pixel_font.png','marine_motion_8x4.png','lab_wall.jpg','lab_wall_alt.jpg','cover.png','menu_scene.jpg','soldier_tight.png','drone_tight.png','warrior_tight.png','praetorian_tight.png','boss_guardian_8x3.png','boss_siege_8x3.png','boss_queen_8x3.png']
-audios=[f'{kind}{i:02}.ogg' for kind in ('stage','boss') for i in range(1,4)]
-mapdata={}
-for name in images+audios:
- mime='image/jpeg' if name.endswith('.jpg') else 'image/png' if name.endswith('.png') else 'audio/ogg'
- mapdata[name]='data:'+mime+';base64,'+base64.b64encode((assets/name).read_bytes()).decode('ascii')
-source=source.replace('<link rel="stylesheet" href="style.css">','<style>\n'+css+'\n</style>')
-audio='data:audio/mpeg;base64,'+base64.b64encode((assets/'stage01_music.mp3').read_bytes()).decode('ascii')
-source=source.replace('src="assets/stage01_music.mp3"','src="'+audio+'"')
-js=js.replace("image.src='assets/'+file;","image.src=window.HIVE_ASSETS[file]||'assets/'+file;")
-js=js.replace("new Audio('assets/'+name+'.ogg')","new Audio(window.HIVE_ASSETS[name+'.ogg']||'assets/'+name+'.ogg')")
-prefix='<script>window.HIVE_ASSETS='+json.dumps(mapdata,separators=(',',':'))+';</script>'
-source=source.replace('<script src="game.js"></script>',prefix+'\n<script>\n'+js+'\n</script>')
-output=root.parent/'XENOMORPH_HIVEBREAK_v07_PLAY.html'
-output.write_text(source)
-print(output,output.stat().st_size,'bytes, embedded',len(mapdata),'assets')
+import argparse
+import base64
+import json
+import mimetypes
+import re
+import zipfile
+
+ROOT = Path(__file__).resolve().parent
+
+def build(output=None):
+    output = Path(output) if output else ROOT / 'dist'
+    output.mkdir(parents=True, exist_ok=True)
+    assets = {}
+    for file in sorted((ROOT / 'assets').iterdir()):
+        if file.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.ogg', '.mp3', '.wav'}:
+            continue
+        mime = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+        assets[file.name] = 'data:' + mime + ';base64,' + base64.b64encode(file.read_bytes()).decode('ascii')
+    html = (ROOT / 'index.html').read_text(encoding='utf-8')
+    html = re.sub(r'<link rel="stylesheet" href="([^"]+)">',
+        lambda m: '<style>\n' + (ROOT/m[1]).read_text(encoding='utf-8') + '\n</style>', html)
+    # Apply asset resolution to inline and generated audio/image URLs. No fetch.
+    prefix = '<script>window.HIVE_ASSETS=' + json.dumps(assets, separators=(',', ':')) + ';\n'
+    prefix += 'window.hiveAsset=(name)=>window.HIVE_ASSETS[name]||"assets/"+name;</script>'
+    def script(match):
+        source = (ROOT / match[1]).read_text(encoding='utf-8')
+        source = source.replace("image.src='assets/'+file;", "image.src=window.hiveAsset(file);")
+        source = source.replace("new Audio('assets/'+name+'.ogg')", "new Audio(window.hiveAsset(name+'.ogg'))")
+        return '<script>\n' + source.replace('</script', '<\\/script') + '\n</script>'
+    html = re.sub(r'<script src="([^"]+)"></script>', script, html)
+    html = html.replace('<head>', '<head>\n' + prefix)
+    html = re.sub(r'src="assets/([^"]+)"', lambda m: 'src="'+assets[m[1]]+'"', html)
+    target = output / 'HIVEBREAK_REFORGED_v080.html'
+    target.write_text(html, encoding='utf-8')
+    archive = output / 'HIVEBREAK_REFORGED_v080.zip'
+    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.write(target, target.name)
+        for filename in ['README.md', 'CHANGELOG.md', 'docs/VALIDATION.md']:
+            file=ROOT/filename
+            if file.exists(): z.write(file, filename)
+    print(f'{target}: {target.stat().st_size:,} bytes; {len(assets)} embedded assets')
+    print(f'{archive}: {archive.stat().st_size:,} bytes')
+    return target
+
+if __name__ == '__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--output', type=Path)
+    build(parser.parse_args().output)

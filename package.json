@@ -1,0 +1,12 @@
+{
+  "name": "hivebreak-reforged",
+  "version": "0.8.0",
+  "private": true,
+  "description": "Ксеноморф: Прорыв улья — автономная аркада на Canvas 2D",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "test": "node test_engine.js && node tests/audio.test.js && node tests/campaign.test.js",
+    "test:browser": "python3 tests/browser_regression.py",
+    "build": "python3 build_portable.py"
+  }
+}
