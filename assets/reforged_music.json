@@ -1,0 +1,66 @@
+{
+  "generator": "tools/create_reforged_music.py",
+  "sample_rate": 22050,
+  "tracks": [
+    {
+      "file": "stage04.ogg",
+      "title": "Нулевой градус",
+      "bpm": 104,
+      "duration": 36.92307692307692,
+      "peak": 0.31494994711397584,
+      "rms": 0.033796752942504366,
+      "sha256": "8ad80a3080862b264a574312a5b1d6fcab65b9e023b1d3d564fc3f2d28c3cfdd",
+      "original_synthesis": true
+    },
+    {
+      "file": "stage05.ogg",
+      "title": "Орбитальный груз",
+      "bpm": 128,
+      "duration": 30.0,
+      "peak": 0.27739447290033953,
+      "rms": 0.05388634863285905,
+      "sha256": "01f6f2b1558eed7c47b7ded0d4e569261397dbe40fb3fb79c07b6dae44681cb9",
+      "original_synthesis": true
+    },
+    {
+      "file": "stage06.ogg",
+      "title": "Сердце колонии",
+      "bpm": 112,
+      "duration": 34.285714285714285,
+      "peak": 0.29791665455534205,
+      "rms": 0.047048878553561595,
+      "sha256": "9c5de1b9adef468c74850d50321a88446bab7bf54f131ac47778a5eb572b098c",
+      "original_synthesis": true
+    },
+    {
+      "file": "boss04.ogg",
+      "title": "Криостраж",
+      "bpm": 144,
+      "duration": 26.666666666666668,
+      "peak": 0.37591810868868364,
+      "rms": 0.07241869239646814,
+      "sha256": "afcf6951948d2a5e8e5f6dc25c2042538fc0656351619e44e220c73b3031be93",
+      "original_synthesis": true
+    },
+    {
+      "file": "boss05.ogg",
+      "title": "Перехватчик",
+      "bpm": 156,
+      "duration": 24.615384615384617,
+      "peak": 0.3324068560478593,
+      "rms": 0.07214064512200667,
+      "sha256": "6dbbd5811ba5b3c6f8b99fae4077e915355708c5b430b698aa983f0a8964e704",
+      "original_synthesis": true
+    },
+    {
+      "file": "boss06.ogg",
+      "title": "Владыка улья",
+      "bpm": 136,
+      "duration": 28.235294117647058,
+      "peak": 0.3283293589049966,
+      "rms": 0.06658726493437576,
+      "sha256": "89bf220872991d1ee2e4ad7d9b8f6d5eb45c00301ef99de408ef2e4605c50561",
+      "original_synthesis": true
+    }
+  ]
+}

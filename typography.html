@@ -1,0 +1,8 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>Проверка кириллицы — Прорыв улья</title>
+<style>body{margin:24px;background:#05111b;color:#d9eeec;font:16px monospace}canvas{display:block;image-rendering:pixelated;max-width:100%;border:1px solid #62858b}a{color:#ffe091}</style>
+<h1>Проверка пиксельного шрифта</h1><p>Кириллица, Ё/ё, строчные буквы, знаки и общая базовая линия. Без сглаживания.</p><canvas id="sample" width="1080" height="660"></canvas><p><a href="index.html">Вернуться к игре</a></p>
+<script>
+(async()=>{const data=await(await fetch('assets/font_manifest.json')).json();const atlas=new Image();atlas.src='assets/pixel_font.png';await atlas.decode();const c=document.querySelector('canvas'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.fillStyle='#071722';g.fillRect(0,0,c.width,c.height);
+const rows=['АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ','абвгдеёжзийклмнопрстуфхцчшщъыьэюя','ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz','0123456789  .,:;!? + − * / % ( ) [ ] № # & @ $','Й Ё Ж Щ Ш Ы Д Л Ф Ю Я ё й щ ж ы д л ф ю я','НАЧАТЬ ИГРУ     НАСТРОЙКИ     УПРАВЛЕНИЕ','Криогенный склад. Центральный улей. Орбитальный док.','Съешь ещё этих мягких французских булок, да выпей чаю.','ЗДОРОВЬЕ 125/125 • ЭНЕРГИЯ 80% • ЖИЗНИ 3','ТЯЖЁЛАЯ АТАКА → РЫВОК → СУПЕРПРИЁМ','ПРОДОЛЖИТЬ  |  ПОЛНЫЙ ЭКРАН  |  СБРОС НАСТРОЕК'];
+let missing=[];rows.forEach((text,row)=>{Array.from(text).forEach((ch,j)=>{const id=data.chars.indexOf(ch);if(id<0){if(!missing.includes(ch))missing.push(ch);return;}g.drawImage(atlas,id%16*7,Math.floor(id/16)*12,7,12,20+j*14,14+row*50,14,24);});});window.FONT_QA={missing,characters:data.chars.length};})()
+</script></html>
