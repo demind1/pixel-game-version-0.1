@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "source_commit": "51b6bd5e404fae394aac3e179a1b754d1757d453",
+  "files": [
+    {
+      "name": "HIVEBREAK_REFORGED_v100.zip",
+      "bytes": 20269486,
+      "sha256": "b1b6705589724a6a1d43b1b627052f47b7c705f0c85513252aaa9e8658f77f71"
+    },
+    {
+      "name": "HIVEBREAK_REFORGED_v100_SOURCE.zip",
+      "bytes": 19625382,
+      "sha256": "7a51648598207c15f1a9a789b51e65b54e7f42aec5a3bef76247a39f549e44a7"
+    }
+  ]
+}
