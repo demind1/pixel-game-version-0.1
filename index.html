@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#040b16">
+<title>Ксеноморф: Прорыв улья — Русская версия v0.7.1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="cabinet" aria-label="Игра Ксеноморф: Прорыв улья">
+  <canvas id="game" width="480" height="270" tabindex="0" aria-label="Аркадная игра Xenomorph Hivebreak"></canvas>
+  <div id="buttons">
+    <button id="sound" title="Звук (M)">♫ ВКЛ</button>
+    <button id="fullscreen" title="Полный экран (F)">⛶</button>
+  </div>
+  <div id="loadout" aria-live="polite">ЗАГРУЗКА ИГРЫ...</div>
+</main>
+<div id="tips">WASD — движение · J — когти · K — хвост · L — навык · Space — прыжок · Shift — рывок · E — захват · U — ульта · Q/E — вкладки настроек · Esc — пауза</div>
+<audio id="music" src="assets/stage01_music.mp3" loop preload="auto"></audio>
+<script src="game.js"></script>
+</body>
+</html>
