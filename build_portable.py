@@ -10,6 +10,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 
 def build(output=None):
+    tag='v'+json.loads((ROOT/'package.json').read_text())['version'].replace('.','')
     output = Path(output) if output else ROOT / 'dist'
     output.mkdir(parents=True, exist_ok=True)
     assets = {}
@@ -32,12 +33,12 @@ def build(output=None):
     html = re.sub(r'<script src="([^"]+)"></script>', script, html)
     html = html.replace('<head>', '<head>\n' + prefix)
     html = re.sub(r'src="assets/([^"]+)"', lambda m: 'src="'+assets[m[1]]+'"', html)
-    target = output / 'HIVEBREAK_REFORGED_v080.html'
+    target = output / f'HIVEBREAK_REFORGED_{tag}.html'
     target.write_text(html, encoding='utf-8')
-    archive = output / 'HIVEBREAK_REFORGED_v080.zip'
+    archive = output / f'HIVEBREAK_REFORGED_{tag}.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         z.write(target, target.name)
-        for filename in ['README.md', 'CHANGELOG.md', 'docs/VALIDATION.md']:
+        for filename in ['README.md', 'CHANGELOG.md', 'docs/VALIDATION.md','docs/VERSION_1_0.md','vendor/THREE_LICENSE.txt']:
             file=ROOT/filename
             if file.exists(): z.write(file, filename)
     print(f'{target}: {target.stat().st_size:,} bytes; {len(assets)} embedded assets')

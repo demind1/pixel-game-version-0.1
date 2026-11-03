@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 let js=fs.readFileSync(__dirname+'/game.js','utf8');
 // Test-only closure access; no production debug setters or gameplay bypasses are shipped.
-js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
+js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,hitTarget,impact3D,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
 const on={};let raf=()=>{},now=0,testPads=[];
 const gradient={addColorStop(){}};
 const ctx=new Proxy({createRadialGradient(){return gradient},createLinearGradient(){return gradient},measureText(v){return {width:String(v).length*5}},getImageData(){return {data:new Uint8ClampedArray(4)}},ellipse(){},drawImage(){},globalAlpha:1,canvas:{width:480,height:270}}, {get(t,k){return k in t?t[k]:()=>{}},set(t,k,v){t[k]=v;return true}});
@@ -104,6 +104,27 @@ const step=(p,input={})=>{now+=1000/60;E.applyPlayer(p,{x:0,y:0,...input})};
  });
  test('custom binding works and captures same physical Russian key',()=>{
   const p=boot();E.settings.bindings={light:'KeyI'};press('ш','KeyI');assert.equal(p.attack,'claw1');E.settings.bindings={};
+ });
+ test('keyboard press survives a long GPU stall and executes only once',()=>{
+  const p=boot();key('j','keydown','KeyJ');key('j','keyup','KeyJ');now+=400;raf(now);assert.equal(p.attack,'claw1');tick(40);assert.equal(p.attack,null);
+ });
+ test('parry prevents a frontal hit, rewards energy and readies one riposte',()=>{
+  const p=boot();p.inv=0;p.energy=40;p.face=1;p.x=100;assert(E.tryAttack(p,'parry'));assert(!E.tryAttack(p,'parry'));const hp=p.hp;E.damagePlayer(p,20,130);assert.equal(p.hp,hp);assert.equal(p.energy,52);assert(p.riposteT>0);assert.equal(p.parryT,0);
+  const e=E.createEnemy('marine',140,p.y);e.hp=e.maxHp=500;api.state.enemies=[e];E.hitTarget(p,e,E.ATTACKS.claw1);assert.equal(e.hp,500-Math.round(14*1.02*1.7));assert.equal(p.riposteT,0);
+ });
+ test('parry does not protect from behind and has a bounded window',()=>{
+  const p=boot();p.inv=0;p.face=1;p.x=100;E.tryAttack(p,'parry');const hp=p.hp;E.damagePlayer(p,10,60);assert(p.hp<hp);
+  const q=boot();q.inv=0;E.tryAttack(q,'parry');for(let i=0;i<12;i++)step(q);assert.equal(q.parryT,0);assert(q.parryCd>0);
+ });
+ test('light then heavy launches a target; juggle impulses diminish',()=>{
+  const p=boot();p.x=100;p.chain=1;p.chainTick=40;assert(E.tryAttack(p,'heavy'));assert.equal(p.attack,'launcher');const e=E.createEnemy('marine',140,p.y);e.hp=e.maxHp=1000;api.state.enemies=[e];
+  E.hitTarget(p,e,E.ATTACKS.launcher);const first=e.vz;E.hitTarget(p,e,E.ATTACKS.launcher);assert(e.vz<first);assert(e.vz>0);
+ });
+ test('execution requires a weakened target, costs energy and heals on a single kill',()=>{
+  const p=boot();p.x=100;p.hp=50;p.energy=100;const e=E.createEnemy('marine',140,p.y),b=E.createEnemy('marine',145,p.y);api.state.enemies=[e,b];assert(!E.tryAttack(p,'execute'));e.hp=5;assert(E.tryAttack(p,'execute'));assert.equal(p.energy,80);for(let i=0;i<18;i++)E.updateAttack(p);assert(e.dead);assert.equal(b.hp,b.maxHp);assert.equal(p.hp,68);assert(p.executionCd>0);
+ });
+ test('impact effects are bounded and expire during simulation',()=>{
+  boot();for(let i=0;i<100;i++)E.impact3D(100,220);assert.equal(api.state.impacts.length,28);tick(24);assert.equal(api.state.impacts.length,0);
  });
  test('equal simulation speed at 60, 120, 144 and 240Hz rendering',()=>{
   const results=[];

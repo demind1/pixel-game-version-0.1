@@ -36,6 +36,8 @@ with sync_playwright() as pw:
     browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True,
         args=['--no-sandbox', '--disable-dev-shm-usage'])
     page = browser.new_page(viewport={'width': 1280, 'height': 720})
+    # This suite validates retained Canvas gameplay. browser_10.py covers WebGL.
+    page.add_init_script("try{const s=JSON.parse(localStorage.getItem('xh_settings')||'{}');s.threeD=false;localStorage.setItem('xh_settings',JSON.stringify(s))}catch{}")
     errors, missing = [], []
     page.on('pageerror', lambda err: errors.append(str(err)))
     page.on('response', lambda res: missing.append(res.url) if res.status >= 400 and '/assets/' in res.url else None)
