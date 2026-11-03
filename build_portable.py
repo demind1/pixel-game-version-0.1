@@ -38,7 +38,7 @@ def build(output=None):
     archive = output / f'HIVEBREAK_REFORGED_{tag}.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         z.write(target, target.name)
-        for filename in ['README.md', 'CHANGELOG.md', 'docs/VALIDATION.md','docs/VERSION_1_0.md','vendor/THREE_LICENSE.txt']:
+        for filename in ['README.md','CHANGELOG.md','vendor/THREE_LICENSE.txt',*[str(p.relative_to(ROOT)) for p in sorted((ROOT/'docs').rglob('*')) if p.is_file()]]:
             file=ROOT/filename
             if file.exists(): z.write(file, filename)
     print(f'{target}: {target.stat().st_size:,} bytes; {len(assets)} embedded assets')
