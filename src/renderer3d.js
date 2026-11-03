@@ -334,6 +334,7 @@ class HiveRenderer {
    const p=ps[i];this.dummy.position.set(p.x,Math.max(.4,(217-p.y)*1.1),0);this.dummy.scale.setScalar(Math.max(.2,p.size*.5));this.dummy.updateMatrix();this.particles.setMatrixAt(i,this.dummy.matrix);this.color.set(p.color);this.particles.setColorAt(i,this.color);
   }
   this.particles.instanceMatrix.needsUpdate=true;if(this.particles.instanceColor)this.particles.instanceColor.needsUpdate=true;
+  if(menu){const rig=this.rigs.get('p0');if(rig)rig.root.rotation.y=Math.PI+.3+Math.sin(g.tick*.006)*.2}
   this.drawDynamic(g,t,settings);this.batchActors();
   this.renderer.info.reset();this.composer.render();
   this.stats={backend:'WebGL2',quality:this.quality,resolution:[this.canvas.width,this.canvas.height],drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,rigs:this.rigs.size,reflections:this.mirror.visible,stage:g.level,boss:!!g.boss,revision:'1.0'};
@@ -374,7 +375,7 @@ class HiveRenderer {
  project(x,y,z=35){this.temp.set(x,z,(y-217)*2).project(this.camera);return {x:(this.temp.x*.5+.5)*480,y:(-.5*this.temp.y+.5)*270}}
  renderMenu(t,settings,classId=3){
   const fake={level:0,camera:0,tick:t,shake:0,players:[{id:0,classId,x:365,y:217,z:0,face:-1,walking:t*.01,anim:t,moveX:0,moveY:0,hp:190}],enemies:[],particles:[],props:[],hazards:[],items:[],puddles:[],bullets:[]};
-  const out=this.render(fake,settings,true);const rig=this.rigs.get('p0');if(rig){rig.root.rotation.y=Math.PI+.3+Math.sin(t*.006)*.2;this.batchActors();this.renderer.info.reset();this.composer.render()}return out;
+  return this.render(fake,settings,true);
  }
  dispose(){this.clearWorld();for(const m of this.materials.values())m.dispose();for(const g of Object.values(this.geo))g.dispose();if(this.actorBatches)for(const b of this.actorBatches.values())b.dispose();this.dust.geometry.dispose();this.dust.material.dispose();this.key.shadow.dispose();for(const p of this.composer.passes)p.dispose?.();this.grain.dispose();this.environment.dispose();if(this.signs)for(const m of this.signs.values()){m.map.dispose();m.dispose()}this.composer.dispose();this.renderer.dispose();this.canvas.remove()}
 }
