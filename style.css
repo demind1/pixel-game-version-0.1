@@ -3,7 +3,7 @@
 html,body{margin:0;min-height:100%;background:#03080d;color:#c5dce0;font-family:Consolas,'Courier New',monospace}
 body{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;min-height:100vh;background:radial-gradient(ellipse at 50% 40%,#152b34 0,#071019 55%,#020407 100%);overflow:hidden}
 #cabinet{box-sizing:content-box;position:relative;width:960px;height:540px;flex:none;aspect-ratio:16/9;border:1px solid #577c83;box-shadow:0 0 0 4px #050a10,0 0 0 5px #1f3d48,0 24px 80px #000b;background:#08101b;overflow:hidden}
-canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;outline:0}
+canvas{display:block;image-rendering:auto;touch-action:none;outline:0}
 canvas:focus-visible{outline:2px solid #f0cb79;outline-offset:-3px}
 #buttons{position:fixed;right:14px;bottom:12px;display:flex;gap:7px;z-index:5}
 button{background:#091b25f0;color:#dcf4f1;border:1px solid #52757b;border-radius:2px;padding:7px 11px;font:700 11px Consolas,monospace;cursor:pointer}
@@ -13,3 +13,9 @@ button:hover,button:focus-visible{background:#23424c;border-color:#efce85;outlin
 #tips{font-size:11px;color:#adc7cb;text-align:center;line-height:1.8;padding:0 20px;max-width:90vw;letter-spacing:.03em}
 #cabinet:fullscreen{width:100vw!important;height:100vh!important;aspect-ratio:auto;border:0;display:flex;justify-content:center;align-items:center;background:#020509}
 @media(max-width:700px){body{gap:10px}#buttons{bottom:4px;right:4px}button{padding:4px 6px;font-size:10px}#tips{font-size:10px}}
+
+/* WebGL and transparent HUD are separate composited layers: no GPU readback. */
+#game{position:relative;z-index:1;background:transparent}
+.scene3d{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:0;pointer-events:none}
+.scene3d[hidden]{display:none}
+#loadout{z-index:3}

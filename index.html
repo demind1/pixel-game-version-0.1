@@ -3,21 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="icon" href="data:,">
 <meta name="theme-color" content="#040b16">
-<title>Ксеноморф: Прорыв улья — Аркадный ремастер 0.8</title>
+<title>Ксеноморф: Прорыв улья — Reforged 1.0</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main id="cabinet" aria-label="Игра Ксеноморф: Прорыв улья">
-  <canvas id="game" width="480" height="270" tabindex="0" aria-label="Ксеноморф: Прорыв улья. Аркадная игра."></canvas>
+  <canvas id="game" width="1440" height="810" tabindex="0" aria-label="Ксеноморф: Прорыв улья. Аркадная игра."></canvas>
   <div id="buttons">
     <button id="sound" title="Звук (M)">♫ ЗВУК</button>
     <button id="fullscreen" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
   </div>
   <div id="loadout" aria-live="polite">ЗАГРУЗКА ИГРЫ...</div>
 </main>
-<div id="tips">WASD / стрелки — движение · J / K — атака · L — навык · U — суперприём<br>Space — прыжок · Shift — рывок · E — захват · Esc — пауза · F — полный экран</div>
+<div id="tips">WASD / стрелки — движение · J / K — атака · L — навык · U — суперприём<br>Space — прыжок · Shift — рывок · E — захват · Q — парирование · R — добивание · Esc — пауза</div>
 <audio id="music" src="assets/stage01_music.mp3" loop preload="auto"></audio>
+<script src="vendor/renderer3d.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
