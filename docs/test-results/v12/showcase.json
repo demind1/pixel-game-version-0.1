@@ -1,0 +1,16 @@
+{
+  "passed": 8,
+  "checks": [
+    "original rock music actually plays in Chromium",
+    "class 1 remains playable with skinned animation",
+    "class 2 remains playable with skinned animation",
+    "class 3 remains playable with skinned animation",
+    "class 4 remains playable with skinned animation",
+    "recorded movement and attacks have no uncaught errors",
+    "final maximum-quality character scene renders without errors",
+    "browser supplied actual video frames"
+  ],
+  "errors": [],
+  "video": "movement-and-combat.mp4",
+  "note": "Real browser recording on software GPU; not a hardware FPS benchmark."
+}

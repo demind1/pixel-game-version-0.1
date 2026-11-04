@@ -1,0 +1,97 @@
+
+> hivebreak-reforged@1.2.0 test
+> node test_engine.js && node tests/audio.test.js && node tests/campaign.test.js && node tests/character_motion.mjs && node tests/progression.test.js
+
+PASS all source images loaded in fake harness
+PASS physical key codes ignore active layout; fallback covers Cyrillic
+PASS Russian-layout events move and attack using physical keys
+PASS movement keys release even if layout changes while held
+PASS diagonal speed is normalized in world space; analog magnitude preserved
+PASS held and repeated jump does not auto-jump after landing
+PASS jump buffered just before landing executes once
+PASS combo accepts input in late recovery; stale input expires after 125ms
+PASS hitstop captures controller/keyboard edge; buffered action survives
+PASS attacks charge resources at execution including queued super
+PASS one attack can damage each target only once
+PASS grab bite damages captive and player hit releases reciprocal grab
+PASS armored counter is a stance until struck and does not double-hit
+PASS perfect dodge rewards only once per dodge
+PASS directional dodge has cooldown, limited invulnerability, and respects gates
+PASS root-motion attacks cannot escape wave arena bounds
+PASS high jumps evade chest-height bullets; grounded player is hit
+PASS focus loss/hidden document pause and clear held keys
+PASS gamepad deadzone, press edges and disconnect pause
+PASS co-op controller independently moves player 2
+PASS custom binding works and captures same physical Russian key
+PASS keyboard press survives a long GPU stall and executes only once
+PASS parry prevents a frontal hit, rewards energy and readies one riposte
+PASS parry does not protect from behind and has a bounded window
+PASS light then heavy launches a target; juggle impulses diminish
+PASS execution requires a weakened target, costs energy and heals on a single kill
+PASS impact effects are bounded and expire during simulation
+PASS heavy armor resists knockback while light enemies recoil
+PASS soft enemy contacts separate bodies without damage or escaping arenas
+PASS ground bodies resist overlap while an invulnerable dash can pass
+PASS melee misses outside its fitted horizontal and lane bounds
+PASS equal simulation speed at 60, 120, 144 and 240Hz rendering
+PASS all four classes, all enemies and all mission boss phases render/simulate
+PASS low crawl evades high shots but remains vulnerable to low shots
+PASS spawn clearance follows the front co-op player and remains inside the gate
+PASS earned upgrades affect health and recovery without skipping active hits
+PASS: 36 engine integration tests
+PASS audio: gesture gate, polyphony/retrigger limits, six boss tracks, master gain, fades, style switching and pause silence
+PASS six distinct mission definitions preserve original three
+PASS all enemy definitions referenced by campaign exist
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 1: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 2: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 3: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 4: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 5: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS mission 6: all five waves gate progress, recover invalid enemies, and lead to boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS wave sequence cannot spawn twice or overlap with an active boss
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS orphaned grabs release and expired corpses are collected
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS enemy magazines empty, reload, and never shoot from outside the camera
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS windup locks enemy aim and concurrent threats are limited
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS assault melee damages the real player without corrupting hp
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS cryo vents warn before activation and jumps avoid grounded hazards
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS level events trigger once and have a bounded lifetime
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS boss dash locks direction and stays inside its arena
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS boss summons are capped and cannot grow without limit
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS boss defeat cannot be reversed by surviving summoned enemies
+Звук недоступен: (window.AudioContext || window.webkitAudioContext) is not a constructor
+PASS dead coop partner never pulls the living player backward; stage revival restores hp and life
+PASS 19 campaign scenarios; all 30 waves and 6 mission transitions validated.
+PASS real GLB has skinned surfaces, normal maps and authored attack clips
+PASS skin weights normalize and every vertex has a valid bone reference
+PASS root/skin remain finite during animation evaluation
+PASS support foot stays planted while the body translates
+PASS repeated renders at unchanged simulation time do not advance the pose
+PASS three claw attacks have distinct hand paths
+PASS tail inertia stays bounded and never penetrates the floor
+PASS marine rifle aims forward and follows a two-hand firing stance
+PASS reload moves the support hand through separate magazine poses
+PASS all four classes are different meshes and runner has a lower silhouette
+PASS enemy melee and boss telegraphs sample anticipation then contact poses
+PASS shield is attached to the animated forearm and releases its geometry
+PASS all six bosses retain different skeletal equipment silhouettes
+PASS quadruped foreleg remains planted while the torso moves
+PASS foreleg support survives a full-speed stance without an anchor reset
+PASS slow crawling selects a separate low animation
+PASS 16 real-asset skeletal and motion checks
+PASS progression: XP thresholds, bounded ranks, 12-point budget, purchase validation and save roundtrip

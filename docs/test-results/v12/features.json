@@ -1,0 +1,27 @@
+{
+  "passed": 21,
+  "checks": [
+    "mouse decreases audio setting",
+    "mouse increases audio setting",
+    "mouse starts key rebinding",
+    "mouse starts selection",
+    "mouse selects runner",
+    "four portraits are actual loaded model renders",
+    "evolution dialog opens",
+    "unearned upgrades cannot be bought",
+    "modal evolution blocks background controller actions",
+    "earned point buys a real health upgrade",
+    "health upgrade applies to the live specimen",
+    "wave spawns at least 100 units ahead",
+    "quadruped gait uses foreleg supports",
+    "quadruped torso is lower than upright idle",
+    "Ctrl enters actual low crawl during play",
+    "mouse resumes paused game",
+    "mouse navigation returns keyboard focus to the game",
+    "queen uses its own authored GLB",
+    "boss victory earns persistent class XP",
+    "purchased rank survives reload",
+    "no uncaught browser errors"
+  ],
+  "errors": []
+}

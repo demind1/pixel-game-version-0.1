@@ -1,26 +1,25 @@
 # Скачать игру
 
-## Версия 1.1 — персонажи, движение и бой
+## Версия 1.2 — Genesis
 
-- [Скачать игру ZIP](HIVEBREAK_REFORGED_v110.zip?raw=true).
-- [Скачать исходный проект 1.1](HIVEBREAK_REFORGED_v110_SOURCE.zip?raw=true).
-- [Запись движения и боя](movement-and-combat-v110.mp4?raw=true) — настоящий браузер, без звука.
-- [Скриншоты и результаты проверок](../docs/CHARACTER_OVERHAUL_1_1.md).
+- [Игра ZIP](HIVEBREAK_REFORGED_v120.zip?raw=true).
+- [Полный исходный проект](HIVEBREAK_REFORGED_v120_SOURCE.zip?raw=true).
+- [Видео движения и боя, без звука](movement-and-combat-v120.mp4?raw=true).
+- [Скриншоты и результаты проверок](../docs/VERSION_1_2.md).
 
-Нажмите ссылку или откройте ZIP на GitHub и выберите **Download raw file**.
-Распакуйте игровой архив и откройте `HIVEBREAK_REFORGED_v110.html` в браузере.
-Код, 3D-модели, музыка, картинки и шрифт встроены в HTML; интернет для игры
-не нужен. Первый ввод разрешает звук. «Настройки → Графика» позволяют выбрать
-качество, отражения и свечение; «Аудио → Стиль музыки» — рок или электронику.
+На странице ZIP нажмите **Download raw file**. Распакуйте архив и откройте
+`HIVEBREAK_REFORGED_v120.html` в Chrome/Edge. Установка и интернет не нужны.
+Первое нажатие включает звук. Для исходников используйте `npm start`.
 
-Контрольные суммы и исходный коммит: [release-v110.json](release-v110.json).
-Для самостоятельной сборки: `npm ci`, затем `npm run build`.
-Для запуска исходников: `npm start` и адрес `http://localhost:8080`.
-Готовая игра не требует Blender, Node или Python.
+**Новое управление:** Ctrl / L3 — низкое ползание; мышь — меню и настройки;
+кнопка «Эволюция» — прокачка класса. В активном бою открытие прокачки ставит
+игру на паузу. Опыт сохраняется локально и отдельно для каждого класса.
+
+В графике доступны качество, отражения, свечение и лёгкая пикселизация.
+Контрольные суммы и исходный коммит: [release-v120.json](release-v120.json).
 
 ## Предыдущие версии
 
-- [Игра 1.0](HIVEBREAK_REFORGED_v100.zip?raw=true).
-- [Исходники 1.0](HIVEBREAK_REFORGED_v100_SOURCE.zip?raw=true).
-- [Игра 0.8](HIVEBREAK_REFORGED_v080.zip?raw=true).
-- [Исходники 0.8](HIVEBREAK_REFORGED_v080_SOURCE.zip?raw=true).
+- [Игра 1.1](HIVEBREAK_REFORGED_v110.zip?raw=true) · [Исходники](HIVEBREAK_REFORGED_v110_SOURCE.zip?raw=true).
+- [Игра 1.0](HIVEBREAK_REFORGED_v100.zip?raw=true) · [Исходники](HIVEBREAK_REFORGED_v100_SOURCE.zip?raw=true).
+- [Игра 0.8](HIVEBREAK_REFORGED_v080.zip?raw=true) · [Исходники](HIVEBREAK_REFORGED_v080_SOURCE.zip?raw=true).
