@@ -1,4 +1,4 @@
-"""1.0 WebGL integration/visual checks. Actual shaders, models and bundled assets.
+"""1.1 WebGL integration/visual checks. Actual shaders, models and bundled assets.
 The CI browser uses a software GPU; reported timings are not hardware FPS claims.
 """
 from pathlib import Path
@@ -24,7 +24,7 @@ with sync_playwright() as pw:
  page=b.new_page(viewport={'width':1600,'height':1000});page.add_init_script(hook)
  errors=[];missing=[]
  page.on('pageerror',lambda e:errors.append(str(e)))
- page.on('response',lambda r:missing.append(r.url) if r.status>=400 and r.url.endswith(('.js','.png','.ogg','.mp3')) else None)
+ page.on('response',lambda r:missing.append(r.url) if r.status>=400 and r.url.endswith(('.js','.png','.ogg','.mp3','.glb')) else None)
  page.goto(base);page.wait_for_function('HIVEBREAK.ready && HIVEBREAK.renderer.active && HIVEBREAK.renderer.drawCalls>1',timeout=120000)
  check('real WebGL2 backend initializes',page.evaluate('HIVEBREAK.renderer.backend')=='WebGL2')
  check('high resolution presentation canvas',page.locator('#game').evaluate('(c)=>c.width>=1440 && c.height>=810'))
@@ -40,7 +40,7 @@ with sync_playwright() as pw:
  page.evaluate('HIVEBREAK.simulate(60)');page.keyboard.press('q');page.wait_for_function('HIVEBREAK.players[0].parryCd>0',timeout=30000)
  check('physical Q reaches parry in real browser',page.evaluate('HIVEBREAK.players[0].parryCd')>0)
  page.evaluate('HIVEBREAK.simulate(60)');page.keyboard.press('j');page.wait_for_function('HIVEBREAK.players[0].attack!==null',timeout=30000)
- check('attack drives a jointed 3D rig',page.evaluate('''() => {const p=HIVEBREAK.players[0],r=__renderer.rigs.get('p1');p.attack=null;__renderer.render(HIVEBREAK.state,HIVEBREAK.settings);const idle=r.arms[1].arm.rotation.z;p.attack='claw1';p.attackT=5;__renderer.render(HIVEBREAK.state,HIVEBREAK.settings);return r.arms.length===2&&r.tail.length===13&&Math.abs(r.arms[1].arm.rotation.z-idle)>.1}'''))
+ check('attack drives a jointed 3D rig',page.evaluate('''() => {const p=HIVEBREAK.players[0],r=__renderer.rigs.get('p1'),t=HIVEBREAK.state.tick/60;p.attack=null;r.motion.update(p,t+.10,__renderer.config.attacks,'player');const idle=r.bones.get('hand_R').getWorldPosition(r.root.position.clone());p.attack='claw1';p.attackT=5;r.motion.update(p,t+.25,__renderer.config.attacks,'player');const moved=r.bones.get('hand_R').getWorldPosition(idle.clone());return r.skeletal&&r.tail.length===17&&r.skinned.length>=3&&moved.distanceTo(idle)>1}'''))
  page.evaluate('HIVEBREAK.configure({quality3d:1});HIVEBREAK.simulate(100);HIVEBREAK.state.stageBanner=0;HIVEBREAK.state.announceT=0')
  page.wait_for_function('HIVEBREAK.renderer.quality===1',timeout=30000);page.screenshot(path=str(args.output/'fight-1.0.png'))
  page.keyboard.press('Escape');page.wait_for_function('HIVEBREAK.screen==="paused"')
@@ -57,6 +57,7 @@ with sync_playwright() as pw:
   page.evaluate('HIVEBREAK.spawnBoss();HIVEBREAK.players[0].x=HIVEBREAK.state.boss.x-110;HIVEBREAK.simulate(100);HIVEBREAK.state.announceT=0')
   page.wait_for_function('HIVEBREAK.renderer.boss===true',timeout=30000)
   check(f'boss {level+1} has an articulated 3D model',page.evaluate('__renderer.rigs.has("boss")'))
+  check(f'boss {level+1} keeps its own skeletal equipment',page.evaluate(f'__renderer.rigs.get("boss").equipment.stage==={level} && __renderer.rigs.get("boss").equipment.count>0'))
   page.screenshot(path=str(args.output/f'boss-{level+1}.png'))
   page.evaluate('HIVEBREAK.damageBoss(100000);HIVEBREAK.simulate(150)')
   check(f'boss {level+1} defeat still advances gameplay',page.evaluate('HIVEBREAK.screen')=='stageclear')
@@ -70,7 +71,7 @@ with sync_playwright() as pw:
  page.wait_for_function('!HIVEBREAK.renderer.active',timeout=30000)
  check('context loss activates fallback',not page.evaluate('HIVEBREAK.renderer.active'))
  page.evaluate('__lose.restoreContext()')
- page.wait_for_function('HIVEBREAK.renderer.active && !__renderer.needsRecreate',timeout=120000)
+ page.wait_for_function('HIVEBREAK.renderer.active && HIVEBREAK.renderer.charactersReady && HIVEBREAK.renderer.skinned>0 && !__renderer.needsRecreate',timeout=120000)
  check('context restoration recreates the renderer',page.evaluate('HIVEBREAK.renderer.active'))
  check('no uncaught 3D exceptions',not errors);check('no missing game dependencies',not missing)
  # The fallback is tested by actually denying creation of WebGL contexts.

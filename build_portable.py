@@ -15,7 +15,7 @@ def build(output=None):
     output.mkdir(parents=True, exist_ok=True)
     assets = {}
     for file in sorted((ROOT / 'assets').iterdir()):
-        if file.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.ogg', '.mp3', '.wav'}:
+        if file.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.ogg', '.mp3', '.wav', '.glb'}:
             continue
         mime = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
         assets[file.name] = 'data:' + mime + ';base64,' + base64.b64encode(file.read_bytes()).decode('ascii')

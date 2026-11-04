@@ -1,0 +1,103 @@
+{
+  "style": "original industrial rock",
+  "sample_free": true,
+  "method": "Karplus-Strong strings, double-tracked power chords, cabinet filtering, original synthesized drums",
+  "tracks": [
+    {
+      "file": "rock_stage01.ogg",
+      "bpm": 142,
+      "seconds": 27.042267573696144,
+      "peak": 0.6015978697785394,
+      "rms": 0.11156012199906766,
+      "sha256": "3713a649ed36066c56d16a5224e492c6c53a349309487a733840d68f2f0d599c"
+    },
+    {
+      "file": "rock_stage02.ogg",
+      "bpm": 156,
+      "seconds": 24.615374149659864,
+      "peak": 0.5858862779841361,
+      "rms": 0.11856994576853802,
+      "sha256": "d1e60f18d4d34786d66c642066ff144a6fe976743cfae27ba650ebfbcee34ed7"
+    },
+    {
+      "file": "rock_stage03.ogg",
+      "bpm": 146,
+      "seconds": 26.301360544217687,
+      "peak": 0.5756970782807858,
+      "rms": 0.1150245777047202,
+      "sha256": "d7eed7291c9c1ad7cc03e605cae2f30627340cfc3584276fe58b419f21b69cd2"
+    },
+    {
+      "file": "rock_stage04.ogg",
+      "bpm": 138,
+      "seconds": 27.826077097505667,
+      "peak": 0.5870076488159625,
+      "rms": 0.10863940234268456,
+      "sha256": "5625d35c7a1402c634ef39e3f7374e25ea4ab2232e29f1cccc137cb999920733"
+    },
+    {
+      "file": "rock_stage05.ogg",
+      "bpm": 162,
+      "seconds": 23.703718820861678,
+      "peak": 0.5952700752760096,
+      "rms": 0.11768553742973863,
+      "sha256": "ac373ce7c29c9880a559b404f3f5a3fce331da619f35192440d5c894cd865644"
+    },
+    {
+      "file": "rock_stage06.ogg",
+      "bpm": 150,
+      "seconds": 25.6,
+      "peak": 0.5869542158050357,
+      "rms": 0.11685699348900529,
+      "sha256": "85d54ced228ca70e666f07b573c3844b2a798269d5344830ec02261378247289"
+    },
+    {
+      "file": "rock_boss01.ogg",
+      "bpm": 168,
+      "seconds": 22.857142857142858,
+      "peak": 0.683470345322255,
+      "rms": 0.12460892797338521,
+      "sha256": "1050f2cf74e1d797dac45ddc1dfd398c86e981ef2f79ec0c26318ecba092c453"
+    },
+    {
+      "file": "rock_boss02.ogg",
+      "bpm": 176,
+      "seconds": 21.818185941043083,
+      "peak": 0.638776610467199,
+      "rms": 0.13021069255214313,
+      "sha256": "74ce35d6c13789fcde5680764d2fb6b6087e264fe90235063e434e0dbca8860e"
+    },
+    {
+      "file": "rock_boss03.ogg",
+      "bpm": 172,
+      "seconds": 22.325578231292518,
+      "peak": 0.6723406815990055,
+      "rms": 0.127373100296308,
+      "sha256": "d61de9b3590aa0e740f1c256ea9ef51d6078363db3f71e735169e923192c006a"
+    },
+    {
+      "file": "rock_boss04.ogg",
+      "bpm": 166,
+      "seconds": 23.132517006802722,
+      "peak": 0.6734967217628973,
+      "rms": 0.1247273223794193,
+      "sha256": "4d146c2ca249806c33db082279a3ad3c00960a3a5eef2690ff15cfd189e07f52"
+    },
+    {
+      "file": "rock_boss05.ogg",
+      "bpm": 182,
+      "seconds": 21.09891156462585,
+      "peak": 0.6299225911880196,
+      "rms": 0.12929317232556287,
+      "sha256": "fefcf8fcf1415519fc77828c0439e1da0ec776415d05ad882fed2cbce2d53bf4"
+    },
+    {
+      "file": "rock_boss06.ogg",
+      "bpm": 174,
+      "seconds": 22.068979591836733,
+      "peak": 0.6428303859291226,
+      "rms": 0.1275866776268538,
+      "sha256": "9a4f7328dae3295ee8e54c9760a42e9c49bebf15a463620895c4a640931ba99b"
+    }
+  ]
+}

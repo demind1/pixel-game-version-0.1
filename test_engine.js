@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 let js=fs.readFileSync(__dirname+'/game.js','utf8');
 // Test-only closure access; no production debug setters or gameplay bypasses are shipped.
-js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,hitTarget,impact3D,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
+js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,hitTarget,impact3D,resolveBodyContacts,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
 const on={};let raf=()=>{},now=0,testPads=[];
 const gradient={addColorStop(){}};
 const ctx=new Proxy({createRadialGradient(){return gradient},createLinearGradient(){return gradient},measureText(v){return {width:String(v).length*5}},getImageData(){return {data:new Uint8ClampedArray(4)}},ellipse(){},drawImage(){},globalAlpha:1,canvas:{width:480,height:270}}, {get(t,k){return k in t?t[k]:()=>{}},set(t,k,v){t[k]=v;return true}});
@@ -125,6 +125,18 @@ const step=(p,input={})=>{now+=1000/60;E.applyPlayer(p,{x:0,y:0,...input})};
  });
  test('impact effects are bounded and expire during simulation',()=>{
   boot();for(let i=0;i<100;i++)E.impact3D(100,220);assert.equal(api.state.impacts.length,28);tick(24);assert.equal(api.state.impacts.length,0);
+ });
+ test('heavy armor resists knockback while light enemies recoil',()=>{
+  const p=boot();p.x=100;const a=E.createEnemy('marine',145,p.y),b=E.createEnemy('heavy',145,p.y);a.hp=b.hp=1000;api.state.enemies=[a,b];E.hitTarget(p,a,E.ATTACKS.tail);E.hitTarget(p,b,E.ATTACKS.tail);assert(Math.abs(a.vx)>Math.abs(b.vx)*1.7);assert(Math.abs(a.vx)<8);
+ });
+ test('soft enemy contacts separate bodies without damage or escaping arenas',()=>{
+  boot();api.state.waveActive=true;api.state.arenaMin=100;api.state.gateX=300;const a=E.createEnemy('marine',200,220),b=E.createEnemy('heavy',200,220);api.state.enemies=[a,b];const hp=a.hp+b.hp;for(let i=0;i<20;i++)E.resolveBodyContacts();assert(Math.hypot(a.x-b.x,(a.y-b.y)*2)>15);assert.equal(a.hp+b.hp,hp);assert(a.x>=100&&b.x<=300);
+ });
+ test('ground bodies resist overlap while an invulnerable dash can pass',()=>{
+  const p=boot();p.x=199;p.y=220;const e=E.createEnemy('marine',200,220);api.state.enemies=[e];for(let i=0;i<12;i++)E.resolveBodyContacts();assert(Math.hypot(e.x-p.x,(e.y-p.y)*2)>15);p.dodge=10;p.x=e.x;E.resolveBodyContacts();assert.equal(p.x,e.x);
+ });
+ test('melee misses outside its fitted horizontal and lane bounds',()=>{
+  const p=boot();p.x=100;p.y=217;const a=E.createEnemy('marine',161,217),b=E.createEnemy('marine',145,242);api.state.enemies=[a,b];const hp=a.hp+b.hp;E.beginAttack(p,'claw1');for(let i=0;i<9;i++)E.updateAttack(p);assert.equal(a.hp+b.hp,hp);
  });
  test('equal simulation speed at 60, 120, 144 and 240Hz rendering',()=>{
   const results=[];

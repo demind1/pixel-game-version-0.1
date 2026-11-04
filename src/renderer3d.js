@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { CharacterLibrary } from './characters.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -36,7 +37,8 @@ class HiveRenderer {
   this.rim=new T.PointLight(0x58d9e6,19000,450,2);this.scene.add(this.rim);
   this.warm=new T.PointLight(0xff9c4f,9500,300,2);this.scene.add(this.warm);
   this.hitLight=new T.PointLight(0xbaffc7,0,200,2);this.scene.add(this.hitLight);
-  this.world=new T.Group();this.actors=new T.Group();this.effects=new T.Group();this.scene.add(this.world,this.actors,this.effects);
+  this.world=new T.Group();this.actors=new T.Group();this.skeletalActors=new T.Group();this.effects=new T.Group();this.scene.add(this.world,this.actors,this.skeletalActors,this.effects);
+  this.ready=false;this.characters=new CharacterLibrary(config.assetURL);this.characters.promise.then(()=>this.ready=true).catch(e=>{this.failed=true;this.assetError=String(e.message);console.error('Не удалось загрузить персонажей:',e)});
   this.geo={box:new T.BoxGeometry(1,1,1),sphere:new T.SphereGeometry(1,16,12),cylinder:new T.CylinderGeometry(1,1,1,10),cone:new T.ConeGeometry(1,1,10),torus:new T.TorusGeometry(1,.12,6,32),plane:new T.PlaneGeometry(1,1),slash:new T.TorusGeometry(1,.026,4,40,Math.PI*1.05)};
   this.materials=new Map();this.dynamic=[];
   const grain=new Uint8Array(128*128*4);for(let i=0;i<128*128;i++){const x=i%128,y=Math.floor(i/128),v=165+((i*1597+Math.floor(i/17)*197)%75);grain[i*4]=grain[i*4+1]=grain[i*4+2]=(x%32===0||y%32===0)?90:v;grain[i*4+3]=255}
@@ -66,7 +68,7 @@ class HiveRenderer {
  clearWorld(){
   for(const d of this.dynamic)if(d.dispose)d.dispose();this.dynamic=[];
   while(this.world.children.length)this.world.remove(this.world.children[0]);
-  for(const rig of this.rigs.values())this.actors.remove(rig.root);this.rigs.clear();
+  for(const rig of this.rigs.values()){rig.dispose?.();rig.root.removeFromParent()}this.rigs.clear();
  }
  buildStage(index){
   this.clearWorld();this.stage=index;this.palette=PALETTES[index];const p=this.palette,len=this.config.levels[index].length;
@@ -164,149 +166,42 @@ class HiveRenderer {
  batchActors(){
   if(!this.actorBatches){this.actorBatches=new Map();this.actorBatchRoot=new T.Group();this.scene.add(this.actorBatchRoot)}
   const used=new Map();this.actors.updateMatrixWorld(true);
-  for(const rig of this.rigs.values())rig.root.traverse(o=>{
+  for(const rig of this.rigs.values()){if(rig.skeletal)continue;rig.root.traverse(o=>{
    if(!o.isMesh||!o.visible)return;let parent=o.parent;while(parent&&parent!==rig.root){if(!parent.visible)return;parent=parent.parent}
    const key=o.geometry.uuid+':'+o.material.uuid;let batch=this.actorBatches.get(key);
    if(!batch){batch=new T.InstancedMesh(o.geometry,o.material,384);batch.instanceMatrix.setUsage(T.DynamicDrawUsage);batch.frustumCulled=false;batch.castShadow=true;batch.receiveShadow=true;this.actorBatchRoot.add(batch);this.actorBatches.set(key,batch)}
    const n=used.get(key)||0;if(n<384){batch.setMatrixAt(n,o.matrixWorld);used.set(key,n+1)}
-  });
+  });}
   for(const [key,b] of this.actorBatches){b.count=used.get(key)||0;b.visible=b.count>0;b.instanceMatrix.needsUpdate=true}
   this.actors.visible=false;
  }
- limb(parent,x,y,z,length,radius,mat){
-  const pivot=new T.Group();pivot.position.set(x,y,z);parent.add(pivot);
-  this.mesh(pivot,'cylinder',[0,-length/2,0],[radius,length,radius],mat);
-  this.ball(pivot,[0,0,0],[radius*1.2,radius*1.2,radius*1.2],mat);
-  return pivot;
- }
- xeno(kind=0,boss=false){
-  const root=new T.Group(),body=new T.Group();root.add(body);
-  const colors=[0x354b59,0x4b4560,0x365d65,0x626756];
-  const skin=this.material(colors[kind%4],.62,.3),rib=this.material(0x111c24,.64,.32),edge=this.material(0x8ca5aa,.88,.21),tooth=this.material(0xd0dcc9,.6,.22);
-  this.ball(body,[0,36,0],[10,16,8],skin);this.ball(body,[-2,23,0],[8,7,7],rib);
-  for(let i=0;i<6;i++){
-   this.rod(body,[-8,28+i*3.3,-6],[-1,31+i*3, -9],1.2,edge);
-   this.rod(body,[-8,28+i*3.3,6],[-1,31+i*3,9],1.2,edge);
-  }
-  const neck=new T.Group();neck.position.set(0,52,0);body.add(neck);
-  this.ball(neck,[10,12,0],[25,9.5,8.5],skin);this.ball(neck,[12,14,0],[21,6.5,7.8],this.material(0x243943,.6,.23));
-  this.ball(neck,[25,7,0],[9,4,6],rib);
-  for(let i=0;i<8;i++){
-   for(const z of [-5,5])this.mesh(neck,'cone',[19+i*1.8,6,z],[.7,3,.7],tooth,[0,0,Math.PI]);
-   if(i<6)this.rod(neck,[-7+i*4,15,-8],[-8+i*4,17,8],.55,edge);
-  }
-  for(let j=0;j<5;j++){this.ball(body,[4,24+j*3,0],[7.2-j*.3,1.2,7],rib);this.rod(body,[7,23+j*3,-5],[9,24+j*3,5],.65,edge)}
-  for(let i=0;i<4;i++){
-   const x=-8-i*2;this.rod(body,[x,34+i*4,-5],[x-8,49+i*4,-8],2.1,rib);this.ball(body,[x-8,49+i*4,-8],[2.4,2.4,2.4],edge);
-  }
-  if(kind===3||boss){
-   this.ball(neck,[0,19,0],[23,boss?12:5,19],skin);
-   for(let i=0;i<9;i++)this.mesh(neck,'cone',[-15+i*4.5,27,Math.sin(i)*12],[2,10,2],edge,[0,0,-.2]);
-  }
-  const arms=[],legs=[];
-  for(const s of [-1,1]){
-   const arm=this.limb(body,1,48,s*8,16,3.3,skin),fore=this.limb(arm,0,-16,0,15,2.4,rib);arms.push({arm,fore});for(let n=0;n<4;n++)this.mesh(fore,'torus',[0,-3-n*3,0],[2.9,2.9,2.9],edge,[Math.PI/2,0,0]);
-   for(let j=0;j<3;j++)this.rod(fore,[0,-15,(j-1)*2],[7,-21,(j-1)*3],.65,tooth);
-   const leg=this.limb(root,-2,33,s*5.5,17,4,skin),shin=this.limb(leg,0,-17,0,16,2.8,rib);legs.push({leg,shin});
-   this.ball(shin,[4,-16,0],[7,2.2,4],skin);for(let j=0;j<3;j++)this.rod(shin,[6,-16,(j-1)*2],[12,-16,(j-1)*2.3],.7,tooth);
-  }
-  let tailParent=body;const tail=[];
-  for(let i=0;i<13;i++){
-   const t=new T.Group();t.position.set(i===0?-8:-6,i===0?24:0,0);tailParent.add(t);
-   this.mesh(t,'cylinder',[-3,0,0],[Math.max(.6,2.8-i*.15),6,Math.max(.6,2.8-i*.15)],i%2?skin:rib,[0,0,Math.PI/2]);
-   this.mesh(t,'cone',[-4,2,0],[1.2,4,1.2],edge,[0,0,-.5]);tail.push(t);tailParent=t;
-  }
-  this.mesh(tailParent,'cone',[-7,0,0],[3,12,2],edge,[0,0,Math.PI/2]);
-  const slash=this.mesh(root,'slash',[22,38,0],[31,31,31],this.material(0xa0ffdf,0,.2,0x6affd0,5,.65),[0,Math.PI/2,0]);slash.visible=false;
-  return {root,body,neck,arms,legs,tail,slash,xeno:true,phase:kind*.8};
- }
- marine(type){
-  const root=new T.Group(),body=new T.Group();root.add(body);
-  const heavy=['heavy','juggernaut','prototype','exosuit'].includes(type),robot=['android','juggernaut','prototype'].includes(type);
-  const skin=this.material(robot?0x9ca6ac:0xb4967a,robot?.9:.1,.53),armor=this.material(type==='engineer'?0x9d7844:type==='medic'?0x859c92:robot?0x4e626f:0x455349,.7,.38),dark=this.material(0x19242e,.65,.42),glow=this.material(robot?0xfb674e:0x77d9e8,.5,.2,robot?0xfb674e:0x77d9e8,2);
-  this.box(body,[0,40,0],[heavy?21:16,22,13],armor);this.box(body,[3,41,0],[8,17,15],dark);
-  this.ball(body,[0,60,0],[7,8,6.5],skin);this.ball(body,[-1,64,0],[8.4,5.6,7.5],armor);
-  this.box(body,[6.8,60,0],[1,3,11],glow);this.box(body,[0,26,0],[13,7,11],dark);for(let n=0;n<3;n++)this.box(body,[9,36+n*4,3],[2,2.5,6],armor);this.box(body,[9,47,2],[1,2,6],glow);
-  for(const z of [-8,8]){this.ball(body,[0,49,z],[8,6,4],armor);this.box(body,[0,40,z],[7,10,2],armor)}
-  const arms=[],legs=[];
-  for(const s of [-1,1]){
-   const arm=this.limb(body,2,48,s*8,12,3.2,armor),fore=this.limb(arm,0,-12,0,12,2.6,skin);arms.push({arm,fore});
-   const leg=this.limb(root,0,27,s*4.5,13,4,armor),shin=this.limb(leg,0,-13,0,12,3,dark);legs.push({leg,shin});this.ball(shin,[2,-1,0],[4,4,4],armor);this.box(shin,[3,-12,0],[11,4,7],dark);
-  }
-  const gun=new T.Group();gun.position.set(16,40,-6);body.add(gun);
-  this.box(gun,[0,0,0],[22,6,6],dark);this.box(gun,[-4,-5,0],[7,8,5],armor);this.rod(gun,[10,0,0],[26,0,0],1.7,armor);
-  const flash=this.mesh(gun,'cone',[30,0,0],[5,14,5],this.material(0xffd982,0,.2,0xffc46d,5),[0,0,-Math.PI/2]);flash.visible=false;
-  if(type==='shield'){this.box(body,[15,36,10],[4,38,23],armor);this.box(body,[18,47,10],[1,9,17],glow)}
-  if(type==='medic')for(const s of [-1,1]){this.box(body,[8,43,s*8],[1,2,8],this.material(0xd4e2d1,.3,.5));this.box(body,[8,43,s*8],[1,8,2],this.material(0xd4e2d1,.3,.5))}
-  if(heavy){this.box(body,[-11,37,0],[12,26,22],armor);for(const z of [-13,13])this.box(body,[0,48,z],[15,9,9],armor)}
-  return {root,body,arms,legs,gun,flash,xeno:false,phase:0};
- }
- decorateBoss(r,stage){
-  const armor=this.material(stage===3?0x698d9d:stage===4?0x655b53:0x4e5a4b,.8,.3),dark=this.material(0x15242c,.7,.3),shine=this.material(stage===3?0x7defff:stage===4?0xffad6a:0xc4ff86,.3,.2,stage===3?0x7defff:stage===4?0xffad6a:0xb1f978,2);
-  if(stage===0){for(let i=0;i<5;i++)this.mesh(r.body,'cone',[-11,43+i*4,0],[3,18,3],armor,[0,0,.7]);}
-  if(stage===1){for(const a of r.arms){this.box(a.fore,[0,-7,0],[10,19,11],armor);this.box(a.arm,[0,-3,0],[11,9,12],armor)}this.box(r.body,[4,38,0],[13,21,21],armor);}
-  if(stage===2){this.ball(r.body,[-9,26,0],[17,12,13],dark);for(const z of [-1,1])for(let i=0;i<5;i++)this.rod(r.neck,[-9+i*3,21,z*11],[-13+i*5,30+i*2,z*(20+i*3)],1.2,armor);}
-  if(stage===3){for(const z of [-12,12]){this.mesh(r.body,'cylinder',[-13,39,z],[6,31,6],armor);this.mesh(r.body,'cylinder',[-13,41,z],[6.2,20,6.2],shine)}this.box(r.body,[11,42,0],[4,13,13],shine);for(const a of r.arms)this.box(a.fore,[0,-12,0],[9,19,11],armor);}
-  if(stage===4){for(const z of [-17,17]){this.box(r.body,[-3,54,z],[21,17,13],armor);for(let i=0;i<3;i++)this.rod(r.body,[7,51+i*4,z],[13,51+i*4,z],1.4,shine)}this.box(r.body,[-10,45,0],[13,29,26],dark);this.mesh(r.body,'torus',[-17,45,0],[13,13,13],shine,[0,Math.PI/2,0]);}
-  if(stage===5){this.ball(r.body,[-4,28,0],[15,13,13],armor);for(const z of [-12,12]){const arm=this.limb(r.body,-2,33,z,17,3.2,armor),fore=this.limb(arm,0,-17,0,16,2.6,dark);r.arms.push({arm,fore});for(let i=0;i<3;i++)this.rod(fore,[0,-15,i*2-2],[9,-19,i*3-3],.8,shine)}for(let i=0;i<8;i++)this.mesh(r.neck,'cone',[-18+i*5,29,0],[2,14,2],armor,[0,0,0]);}
- }
  rig(key,actor,kind){
-  let r=this.rigs.get(key);const modelKey=kind+':'+(actor.classId??actor.type??this.stage);if(r&&r.modelKey!==modelKey){this.actors.remove(r.root);this.rigs.delete(key);r=null}if(r)return r;
-  if(kind==='player')r=this.xeno(actor.classId);
-  else if(kind==='boss')r=this.stage===3||this.stage===4?this.marine('exosuit'):this.xeno(this.stage===0?1:3,true);
-  else if(actor.type==='drone'||actor.type==='turret'){
+  let r=this.rigs.get(key);const modelKey=kind+':'+(actor.classId??actor.type??this.stage);if(r&&r.modelKey!==modelKey){r.dispose?.();r.root.removeFromParent();this.rigs.delete(key);r=null}if(r)return r;
+  if(kind==='player'||kind==='boss'||!['drone','turret'].includes(actor.type)){
+   if(!this.characters.ready)return null;
+   const id=kind==='player'?['drone','warrior','runner','praetorian'][actor.classId]:kind==='boss'?(this.stage===3||this.stage===4?'marine':this.stage===0?'warrior':'praetorian'):'marine';
+   const scale=kind==='player'?this.config.classes[actor.classId].scale:kind==='boss'?(this.stage>=3?1.9:1.8):(this.config.enemies[actor.type]?.scale||1);
+   r=this.characters.create(id,kind,actor.type,scale,kind==='boss'?this.stage:null);r.root.scale.setScalar(scale);r.modelKey=modelKey;r.kind=kind;
+   this.skeletalActors.add(r.root);this.rigs.set(key,r);return r;
+  }
    const root=new T.Group(),body=new T.Group();root.add(body);const m=this.material(0x455b6a,.85,.24),dark=this.material(0x10202d,.8,.4),light=this.material(0x9be6ea,.1,.2,0x66eeff,4);
    this.ball(body,[0,12,0],[13,8,12],m);this.box(body,[10,12,0],[8,3,8],light);
    for(const z of [-18,18]){this.box(body,[0,13,z],[27,2,7],m);this.mesh(body,'torus',[0,14,z],[12,12,12],dark,[Math.PI/2,0,0])}
    if(actor.type==='turret'){this.rod(root,[0,0,0],[0,15,0],4,m);this.box(root,[0,1,0],[31,3,22],dark)}
    r={root,body,rotor:true,phase:0};
-  }else r=this.marine(actor.type);
-  if(kind==='boss')this.decorateBoss(r,this.stage);
+
   r.kind=kind;r.modelKey=modelKey;r.root.traverse(o=>{if(o.isMesh&&o.material){o.userData.originalEmissive=o.material.emissiveIntensity||0}});
-  if(kind==='boss')r.root.scale.setScalar(this.stage===2?2.3:this.stage>=3?2.5:2.1);
-  else if(kind==='player')r.root.scale.setScalar(this.config.classes[actor.classId].scale);
-  else r.root.scale.setScalar(this.config.enemies[actor.type]?.scale||1);
+  r.root.scale.setScalar(this.config.enemies[actor.type]?.scale||1);
   this.actors.add(r.root);this.rigs.set(key,r);return r;
  }
  animateRig(r,a,t,kind){
+  if(r.skeletal){r.motion.update(a,t,this.config.attacks,kind);return;}
   r.root.position.set(a.x,a.z||0,(a.y-217)*2);r.root.rotation.y=a.face===-1?Math.PI:0;
   const moving=kind==='player'?Math.hypot(a.moveX||0,a.moveY||0)>.1:a.ai==='approach'||a.ai==='flank';
   const walk=kind==='player'?a.walking*3.2:(a.walk||0)*1.5;
   const stride=moving?Math.sin(walk):Math.sin(t*1.5+r.phase)*.045;
   r.body.position.y=Math.abs(stride)*(r.xeno?1.4:.65);r.body.rotation.z=r.xeno?-.08:0;
   if(r.rotor){r.body.rotation.y=Math.sin(t*3)*.2;r.body.position.y=a.type==='drone'?Math.sin(t*3)*3:0;return}
-  r.legs.forEach(({leg,shin},i)=>{leg.rotation.z=stride*(i?1:-1)*.62;shin.rotation.z=.12+Math.max(0,stride*(i?1:-1))*.8});
-  r.arms.forEach(({arm,fore},i)=>{arm.rotation.z=(r.xeno?.1:.85)+stride*(i?-1:1)*.45;fore.rotation.z=r.xeno?-.45:.8;arm.rotation.x=(i?1:-1)*.12});
-  if(r.xeno){
-   r.neck.rotation.z=Math.sin(t*2)*.035;
-   r.tail.forEach((tail,i)=>{tail.rotation.z=Math.sin(t*3-i*.4)*.11+(i<4?-.07:.12);tail.rotation.y=Math.sin(t*2-i*.35)*.09});
-   if(a.parryT>0){r.arms.forEach(({arm,fore},i)=>{arm.rotation.z=1.7;arm.rotation.x=(i?1:-1)*.45;fore.rotation.z=1.2});r.body.rotation.z=-.15}
-   if(a.dodge>0){r.body.rotation.z=-.35;r.body.position.y=-8;r.arms.forEach(({arm})=>arm.rotation.z=-1.1)}
-   if(a.airborne){r.legs.forEach(({leg,shin},i)=>{leg.rotation.z=i?.8:-.5;shin.rotation.z=1});r.tail.forEach((tail,i)=>tail.rotation.z=.15+Math.sin(t*6-i*.3)*.08)}
-   if(a.attack){
-    const atk=this.config.attacks[a.attack],progress=a.attackT/(atk.startup+atk.active+atk.recovery),contact=smooth(0,atk.startup/(atk.startup+atk.active+atk.recovery),progress),recover=smooth(.5,1,progress);
-    const strike=contact*(1-recover),combo=a.attack==='claw2'?0:1;
-    r.arms.forEach(({arm,fore},i)=>{arm.rotation.z=-.7+strike*(i===combo?3.0:1.7);fore.rotation.z=-.9+strike*.9;arm.rotation.x=(i?1:-1)*(.2+strike*.6)});
-    r.body.rotation.z=-.12+strike*.2;r.neck.rotation.z=-strike*.12;
-    if(a.attack==='launcher'){r.arms[1].arm.rotation.z=-.6+strike*3.8;r.arms[1].fore.rotation.z=-.5;r.body.position.y=strike*4}
-    if(a.attack==='execution'){r.arms.forEach(({arm})=>arm.rotation.z=-.3+strike*3.3);r.neck.rotation.z=-strike*.3}
-    if(['tail','finisher','slam','impact','predator'].includes(a.attack))r.tail.forEach((tail,i)=>{tail.rotation.z=-.15+strike*.46;tail.rotation.y=Math.sin(progress*TAU-i*.16)*.45});
-    r.slash.visible=a.attackT>=atk.startup&&a.attackT<atk.startup+atk.active;r.slash.scale.setScalar(24+strike*10);r.slash.rotation.set(0,1.2+progress*3,progress*1.2);r.slash.position.set(23,38,0);
-   }else r.slash.visible=false;
-  }else{
-   r.arms.forEach(({arm,fore})=>{arm.rotation.z=.95;fore.rotation.z=1.0});
-   r.gun.position.x=16-(a.fire>0?3:0);r.flash.visible=a.fire>0;
-   if(a.reload>0){r.gun.rotation.z=-.6;r.arms[0].fore.rotation.z=1.8+Math.sin(t*16)*.2}else r.gun.rotation.z=0;
-   if(a.wind>0){r.body.rotation.z=-.07;r.gun.rotation.y=Math.sin(t)*.01}
-  }
-  if(a.hurt>0||a.stun>0){r.body.rotation.z=-.18;r.body.position.x=-2}else r.body.position.x=0;
-  if(a.dead){r.root.rotation.z=-Math.min(1.5,(a.deathT||a.downT||0)/18);r.root.position.y=Math.max(3,(a.z||0));r.root.position.z+=8}
-  else r.root.rotation.z=0;
-  if(kind==='boss'){
-   r.body.position.y+=Math.sin(t*2)*1.1;
-   if(a.wind>0)r.arms.forEach(({arm},i)=>arm.rotation.z=1.3+Math.sin(a.wind*.1+i)*.8);
-   if(a.dashT>0)r.body.rotation.z=-.35;
-  }
  }
  setQuality(settings){
   const q=settings.quality3d??1;const width=q===2?Math.min(2560,Math.max(960,Math.floor((window.innerWidth-24)/16)*16)):[640,960][q];if(q===this.quality&&this.canvas.width===width)return;this.quality=q;
@@ -326,9 +221,9 @@ class HiveRenderer {
   this.rim.position.set(cx+100,105,-75);this.warm.position.set(cx-160,55,45);
   for(const d of this.dynamic){if(d.ring)d.ring.rotation.y=t*d.spin;if(d.sac)d.sac.scale.y=23*(1+Math.sin(t*2+d.phase)*.04)}
   const used=new Set();
-  const visit=(key,a,kind)=>{if(a.x<g.camera-160||a.x>g.camera+640||a.dead&&(a.deathT||a.downT)>130)return;const r=this.rig(key,a,kind);r.root.visible=true;this.animateRig(r,a,t,kind);used.add(key)};
+  const visit=(key,a,kind)=>{if(a.x<g.camera-160||a.x>g.camera+640||a.dead&&(a.deathT||a.downT)>130)return;const r=this.rig(key,a,kind);if(!r)return;r.root.visible=true;this.animateRig(r,a,t,kind);used.add(key)};
   g.players.forEach(p=>visit('p'+p.id,p,'player'));g.enemies.forEach(e=>visit('e'+e.id,e,'enemy'));if(g.boss)visit('boss',g.boss,'boss');
-  for(const [key,r] of this.rigs){if(!used.has(key)){this.actors.remove(r.root);this.rigs.delete(key)}}
+  for(const [key,r] of this.rigs){if(!used.has(key)){r.dispose?.();r.root.removeFromParent();this.rigs.delete(key)}}
   const ps=g.particles||[];this.particles.count=Math.min(ps.length,540);
   for(let i=0;i<this.particles.count;i++){
    const p=ps[i];this.dummy.position.set(p.x,Math.max(.4,(217-p.y)*1.1),0);this.dummy.scale.setScalar(Math.max(.2,p.size*.5));this.dummy.updateMatrix();this.particles.setMatrixAt(i,this.dummy.matrix);this.color.set(p.color);this.particles.setColorAt(i,this.color);
@@ -337,7 +232,7 @@ class HiveRenderer {
   if(menu){const rig=this.rigs.get('p0');if(rig)rig.root.rotation.y=Math.PI+.3+Math.sin(g.tick*.006)*.2}
   this.drawDynamic(g,t,settings);this.batchActors();
   this.renderer.info.reset();this.composer.render();
-  this.stats={backend:'WebGL2',quality:this.quality,resolution:[this.canvas.width,this.canvas.height],drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,rigs:this.rigs.size,reflections:this.mirror.visible,stage:g.level,boss:!!g.boss,revision:'1.0'};
+  this.stats={backend:'WebGL2',quality:this.quality,resolution:[this.canvas.width,this.canvas.height],drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,rigs:this.rigs.size,reflections:this.mirror.visible,stage:g.level,boss:!!g.boss,charactersReady:this.characters.ready,skinned:[...this.rigs.values()].filter(r=>r.skeletal).length,revision:'1.1'};
   return this.canvas;
  }
  drawDynamic(g,t,settings){
@@ -377,6 +272,6 @@ class HiveRenderer {
   const fake={level:0,camera:0,tick:t,shake:0,players:[{id:0,classId,x:365,y:217,z:0,face:-1,walking:t*.01,anim:t,moveX:0,moveY:0,hp:190}],enemies:[],particles:[],props:[],hazards:[],items:[],puddles:[],bullets:[]};
   return this.render(fake,settings,true);
  }
- dispose(){this.clearWorld();for(const m of this.materials.values())m.dispose();for(const g of Object.values(this.geo))g.dispose();if(this.actorBatches)for(const b of this.actorBatches.values())b.dispose();this.dust.geometry.dispose();this.dust.material.dispose();this.key.shadow.dispose();for(const p of this.composer.passes)p.dispose?.();this.grain.dispose();this.environment.dispose();if(this.signs)for(const m of this.signs.values()){m.map.dispose();m.dispose()}this.composer.dispose();this.renderer.dispose();this.canvas.remove()}
+ dispose(){this.clearWorld();for(const m of this.materials.values())m.dispose();for(const g of Object.values(this.geo))g.dispose();if(this.actorBatches)for(const b of this.actorBatches.values())b.dispose();this.dust.geometry.dispose();this.dust.material.dispose();this.key.shadow.dispose();for(const p of this.composer.passes)p.dispose?.();this.characters.dispose();this.grain.dispose();this.environment.dispose();if(this.signs)for(const m of this.signs.values()){m.map.dispose();m.dispose()}this.composer.dispose();this.renderer.dispose();this.canvas.remove()}
 }
 window.HiveRenderer=HiveRenderer;
