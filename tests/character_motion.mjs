@@ -55,5 +55,6 @@ for(let stage=0;stage<6;stage++){
 }
 check('all six bosses retain different skeletal equipment silhouettes',()=>assert.equal(new Set(silhouettes).size,6));
 check('quadruped foreleg remains planted while the torso moves',()=>{a.attack=null;a.moveX=1;a.travel=0;a.x=200;step(.5);step(.2);const p=pos('hand_R');assert.equal(rig.motion.hands.size,2);for(let i=0;i<6;i++){a.x+=.4;a.travel+=.4;step()}assert(pos('hand_R').distanceTo(p)<.5);});
+check('foreleg support survives a full-speed stance without an anchor reset',()=>{a.crawling=false;a.travel=0;a.moveX=1;a.x=300;step(.5);step(.2);let last=pos('hand_R'),phase=rig.motion.debug.phase;for(let i=0;i<40;i++){a.x+=2.03;a.travel+=2.03;step();const now=pos('hand_R'),next=rig.motion.debug.phase;if(phase>.14&&next<.48&&next>phase)assert(now.distanceTo(last)<1,'support drift '+now.distanceTo(last));last=now;phase=next;}});
 check('slow crawling selects a separate low animation',()=>{a.crawling=true;step(.2);assert.equal(rig.motion.debug.clip,'Crawl');assert(pos('chest').y<40);});
 console.log('PASS',passed,'real-asset skeletal and motion checks');

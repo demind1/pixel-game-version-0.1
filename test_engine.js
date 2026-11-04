@@ -2,7 +2,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 let js=fs.readFileSync(__dirname+'/game.js','utf8');
 // Test-only closure access; no production debug setters or gameplay bypasses are shipped.
-js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,hitTarget,impact3D,resolveBodyContacts,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
+js=js.replace(/\}\)\(\);\s*$/,`window.__engine={physicalCode,keyAction,beginAttack,tryAttack,applyPlayer,updateAttack,damagePlayer,updateBullets,captureInputs,queueCommands,releaseGrab,createEnemy,sampleGamepad,resetInput,settings,ATTACKS,LEVELS,hitTarget,impact3D,resolveBodyContacts,spawnWave,resetClock(){last=performance.now();acc=0},get frame(){return frame}};})();`);
 const on={};let raf=()=>{},now=0,testPads=[];
 const gradient={addColorStop(){}};
 const ctx=new Proxy({createRadialGradient(){return gradient},createLinearGradient(){return gradient},measureText(v){return {width:String(v).length*5}},getImageData(){return {data:new Uint8ClampedArray(4)}},ellipse(){},drawImage(){},globalAlpha:1,canvas:{width:480,height:270}}, {get(t,k){return k in t?t[k]:()=>{}},set(t,k,v){t[k]=v;return true}});
@@ -156,6 +156,13 @@ const step=(p,input={})=>{now+=1000/60;E.applyPlayer(p,{x:0,y:0,...input})};
   for(let level=0;level<E.LEVELS.length;level++){
    const p=boot();api.setLevel(level);p.inv=100000;tick(4);api.spawnBoss();const boss=api.state.boss;assert(boss);boss.hp=boss.maxHp*.52;tick(3);assert.equal(boss.phase,2);boss.hp=boss.maxHp*.20;tick(3);assert.equal(boss.phase,3);api.damageBoss(20000);tick(150);assert.equal(api.screen,'stageclear');
   }
+ });
+ test('low crawl evades high shots but remains vulnerable to low shots',()=>{
+  const p=boot();p.x=100;p.inv=0;p.stun=0;p.crawling=true;const hp=p.hp;
+  const shot=y=>{api.state.bullets=[{x:80,vx:30,y,depth:p.y,life:10,type:'shot',damage:8}];E.updateBullets()};shot(p.y-50);assert.equal(p.hp,hp);shot(p.y-20);assert(p.hp<hp);
+ });
+ test('spawn clearance follows the front co-op player and remains inside the gate',()=>{
+  const p=boot();p.x=300;api.state.players.push({...p,id:2,x:450});api.state.waveActive=false;E.spawnWave({x:300,types:['marine','heavy','shield','medic']});assert(api.enemies.every(e=>e.x>=560&&e.x<=api.state.gateX));
  });
  test('earned upgrades affect health and recovery without skipping active hits',()=>{
   const p=boot(0);p.x=100;api.evolution[0].xp=450;api.ui('pause');assert(api.upgrade(0,'haste'));assert(api.upgrade(0,'health'));assert(p.maxHp>125);assert(!api.upgrade(0,'damage'));api.ui('back');

@@ -438,7 +438,7 @@ function applyPlayer(p,input){const oldX=p.x,oldY=p.y;const cls=CLASS[p.classId]
  const lev=LEVELS[game.level],cap=game.waveActive?game.gateX:lev.length-40;
  const floor=game.waveActive&&Number.isFinite(game.arenaMin)?Math.max(23,game.arenaMin):game.boss&&!game.boss.dead?Math.max(23,lev.length-580):23;
  p.x=clamp(p.x,floor,Math.min(lev.length-40,cap));p.y=clamp(p.y,190,244);
- if(p.attack&&game.tick%4===0&&p.attackT>0&&p.attackT<20)p.trail.push({x:p.x,y:p.y-p.z,t:9,row:ATTACKS[p.attack].anim,frame:clamp(Math.floor(p.attackT/3),0,9)});p.trail=p.trail.filter(a=>--a.t>0).slice(-5);p.anim++;p.motionVX=p.x-oldX;p.motionVY=p.y-oldY;if(!p.airborne&&!p.attack&&!p.dodge&&!p.stun){const stride=[.86,.82,1.18,.78][p.classId]*44*cls.scale,old=p.travel||0;p.travel=old+Math.hypot(p.motionVX,p.motionVY*2);if(Math.floor(old/stride)!==Math.floor(p.travel/stride))synth('step',p.classId===3?.25:.16);}
+ if(p.attack&&game.tick%4===0&&p.attackT>0&&p.attackT<20)p.trail.push({x:p.x,y:p.y-p.z,t:9,row:ATTACKS[p.attack].anim,frame:clamp(Math.floor(p.attackT/3),0,9)});p.trail=p.trail.filter(a=>--a.t>0).slice(-5);p.anim++;p.motionVX=p.x-oldX;p.motionVY=p.y-oldY;if(!p.airborne&&!p.attack&&!p.dodge&&!p.stun){const stride=[.86,.82,1.18,.78][p.classId]*44*cls.scale*.575,old=p.travel||0;p.travel=old+Math.hypot(p.motionVX,p.motionVY*2);if(Math.floor(old/stride)!==Math.floor(p.travel/stride))synth('step',p.classId===3?.25:.16);}
 }
 // ------------------------------ ENEMY AI -----------------------------------
 function targetPlayer(e){let best=null,dist=Infinity;for(const p of game.players){if(p.dead)continue;const d=Math.abs(p.x-e.x)+Math.abs(p.y-e.y)*1.6;if(d<dist){dist=d;best=p;}}return best;}
@@ -1137,7 +1137,7 @@ function moveMenu(dir){if(screen==='menu')menuIndex=(menuIndex+dir+BUTTONS.lengt
  else if(screen==='paused')menuIndex=(menuIndex+dir+4)%4;
  else if(screen==='options')optionIndex=(optionIndex+dir+OPTION_GROUPS[optionTab].length)%OPTION_GROUPS[optionTab].length;
  else if(screen==='select')selected=(selected+dir+4)%4;synth('select',.4);}
-function tickMenu(){if(menuCooldown>0)menuCooldown--;const gp=getGP()[0];if(!gp)return;const inp=sampleGamepad(gp);
+function tickMenu(){if(document.querySelector?.('dialog[open]'))return;if(menuCooldown>0)menuCooldown--;const gp=getGP()[0];if(!gp)return;const inp=sampleGamepad(gp);
  if(screen==='select'&&coop&&!joined&&inp.select){joined=true;synth('pickup');return;}
  if(screen==='select'&&coop&&joined){if(menuCooldown<=0&&Math.abs(inp.x)>.55){selected2=(selected2+Math.sign(inp.x)+4)%4;menuCooldown=11;synth('select',.4);}if(inp.light||inp.jump){if(joined)beginRun();}return;}
  if(screen==='playing'){if(inp.pause)goBack();return;}

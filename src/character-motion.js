@@ -78,7 +78,7 @@ export class CharacterMotion {
   if(state!==this.state){this.previousAction=this.active;this.active=next;this.active.reset();this.active.setEffectiveWeight(1);this.active.play();const blend=a.attack?.055:state==='Hurt'?.05:.16;this.previousAction?.fadeOut(blend);this.active.fadeIn(blend);this.state=state;this.poseTime=0;this.feet.clear();this.hands.clear();if(state==='Reload')this.reloadStart=a.reload;}
   this.poseTime+=dt;
   const moving=state==='Walk'||state==='Run'||state==='Crawl';const distance=Number.isFinite(a.travel)?a.travel:(a.walking||a.walk||0)*9.66;
-  const cycle=distance/Math.max(1,this.profile.stride*2*(r.unitScale||44)*(r.modelScale||1));
+  const cycle=distance/Math.max(1,this.profile.stride*(this.human?1.25:1.15)*(r.unitScale||44)*(r.modelScale||1));
   if(moving)this.active.time=(cycle%1)*this.active.getClip().duration;
   else if(a.attack){const atk=attacks[a.attack],n=atk.startup+atk.active+atk.recovery-(a.recoveryHaste||0);this.active.time=clamp(a.attackT/n,0,.999)*this.active.getClip().duration;}
   else if(a.motionClip&&(a.wind>0||a.motionRecover>0)){const phase=a.wind>0?(1-a.wind/Math.max(1,a.motionWind||a.wind))*.40:.40+(1-a.motionRecover/(kind==='boss'?24:18))*.599;this.active.time=clamp(phase,0,.999)*this.active.getClip().duration;}

@@ -23,6 +23,8 @@ with sync_playwright() as pw:
  check('four portraits are actual loaded model renders',page.evaluate('''Promise.all(['drone','warrior','runner','praetorian'].map(n=>new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i.naturalWidth===320);i.src='assets/portrait_'+n+'.png'}))).then(a=>a.every(Boolean))'''))
  page.screenshot(path=str(OUT/'selection.png'))
  page.locator('#evolve').click();check('evolution dialog opens',page.locator('dialog').evaluate('(d)=>d.open'));check('unearned upgrades cannot be bought',page.locator('[data-gene="damage"]').is_disabled())
+ page.evaluate("window.modalPad={index:0,connected:true,axes:[0,0],buttons:Array.from({length:18},()=>({pressed:false,value:0}))};Object.defineProperty(navigator,'getGamepads',{value:()=>[modalPad]});modalPad.buttons[0].pressed=true")
+ page.wait_for_timeout(350);check('modal evolution blocks background controller actions',page.evaluate('HIVEBREAK.screen')=='select');page.evaluate('modalPad.buttons[0].pressed=false')
  page.locator('#close-evolution').click()
  # Seed earned XP, reload, then purchase through the real interface.
  page.evaluate("localStorage.setItem('xh_evolution',JSON.stringify([{xp:450,ranks:{}},{},{},{}]))")
@@ -36,7 +38,7 @@ with sync_playwright() as pw:
  check('quadruped gait uses foreleg supports',page.evaluate("quad.hands===2"))
  check('quadruped torso is lower than upright idle',page.evaluate("quad.height<48"))
  page.keyboard.down('ControlLeft');page.keyboard.down('d');page.wait_for_function("__renderer.rigs.get('p1').motion.debug.clip==='Crawl'",timeout=30000);page.screenshot(path=str(OUT/'crawl.png'));page.keyboard.up('d');page.keyboard.up('ControlLeft');check('Ctrl enters actual low crawl during play',True);page.keyboard.press('Escape');page.wait_for_function('HIVEBREAK.screen==="paused"')
- page.locator('[data-action="back"]').click();page.wait_for_function('HIVEBREAK.screen==="playing"');check('mouse resumes paused game',True)
+ page.locator('[data-action="back"]').click();page.wait_for_function('HIVEBREAK.screen==="playing"');check('mouse resumes paused game',True);old=page.evaluate('HIVEBREAK.players[0].x');page.keyboard.down('d');page.wait_for_function(f'HIVEBREAK.players[0].x>{old+2}',timeout=30000);page.keyboard.up('d');check('mouse navigation returns keyboard focus to the game',True)
  page.evaluate('HIVEBREAK.setLevel(2);HIVEBREAK.spawnBoss();HIVEBREAK.players[0].x=HIVEBREAK.state.boss.x-170')
  page.wait_for_function('HIVEBREAK.renderer.boss && __renderer.rigs.has("boss")',timeout=60000)
  check('queen uses its own authored GLB',page.evaluate("__renderer.rigs.get('boss').profile.head===1.30"))

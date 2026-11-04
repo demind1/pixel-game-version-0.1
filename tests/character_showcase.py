@@ -42,7 +42,7 @@ with sync_playwright() as pw:
  page.set_viewport_size({'width':1600,'height':1000})
  page.evaluate('HIVEBREAK.start(0);HIVEBREAK.configure({quality3d:2});HIVEBREAK.players[0].x=320;HIVEBREAK.players[0].inv=10000;HIVEBREAK.simulate(210);HIVEBREAK.state.stageBanner=0;HIVEBREAK.state.announceT=0')
  page.wait_for_function('HIVEBREAK.renderer.quality===2 && HIVEBREAK.renderer.resolution[0]===1568 && HIVEBREAK.renderer.skinned>=3',timeout=60000)
- page.screenshot(path=str(OUT/'maximum-character-detail.png'))
+ page.screenshot(path=str(OUT/'maximum-character-detail.png'));tick=page.evaluate('HIVEBREAK.state.tick');page.keyboard.down('ControlLeft');page.keyboard.down('d');page.wait_for_function(f'HIVEBREAK.players[0].crawling && HIVEBREAK.state.tick>{tick+14}',timeout=30000);page.screenshot(path=str(OUT/'maximum-crawl.png'));page.keyboard.up('d');page.keyboard.up('ControlLeft')
  check('final maximum-quality character scene renders without errors',not errors)
  context.close();b.close()
 check('browser supplied actual video frames',len(frames)>10)
