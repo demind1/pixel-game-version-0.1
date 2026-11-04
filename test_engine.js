@@ -14,7 +14,7 @@ const window={AudioContext:class{constructor(){this.currentTime=0;this.state='ru
 const storageMap=new Map(),storage={getItem:k=>storageMap.get(k)||null,setItem:(k,v)=>storageMap.set(k,v)};
 const document={hidden:false,getElementById:id=>elems[id],addEventListener(k,cb){on['document:'+k]=cb},createElement:type=>({width:0,height:0,getContext:()=>ctx})};
 const env={window,document,navigator:{getGamepads:()=>testPads},Image:FakeImage,Audio:FakeAudio,performance:{now:()=>now},requestAnimationFrame:fn=>raf=fn,Math,console,localStorage:storage,Set,Map,Promise,Uint8ClampedArray};
-vm.createContext(env);
+window.HiveProgression=require('./progression.js');vm.createContext(env);
 // Load optional local browser modules in index order without hiding missing ones.
 for(const file of ['localization.js','animation.js'])if(fs.existsSync(__dirname+'/'+file))vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),env,{filename:file});
 vm.runInContext(js,env,{filename:'game.js'});
@@ -156,6 +156,10 @@ const step=(p,input={})=>{now+=1000/60;E.applyPlayer(p,{x:0,y:0,...input})};
   for(let level=0;level<E.LEVELS.length;level++){
    const p=boot();api.setLevel(level);p.inv=100000;tick(4);api.spawnBoss();const boss=api.state.boss;assert(boss);boss.hp=boss.maxHp*.52;tick(3);assert.equal(boss.phase,2);boss.hp=boss.maxHp*.20;tick(3);assert.equal(boss.phase,3);api.damageBoss(20000);tick(150);assert.equal(api.screen,'stageclear');
   }
+ });
+ test('earned upgrades affect health and recovery without skipping active hits',()=>{
+  const p=boot(0);p.x=100;api.evolution[0].xp=450;api.ui('pause');assert(api.upgrade(0,'haste'));assert(api.upgrade(0,'health'));assert(p.maxHp>125);assert(!api.upgrade(0,'damage'));api.ui('back');
+  const e=E.createEnemy('marine',125,p.y);e.hp=e.maxHp=500;api.state.enemies=[e];E.beginAttack(p,'claw1');let n=0;while(p.attack&&n<30){E.updateAttack(p);n++}assert.equal(n,15);assert.equal(e.hp,486);
  });
  console.log(`PASS: ${passed} engine integration tests`);
 })().catch(err=>{console.error('TEST FAILED',err);process.exitCode=1});

@@ -7,7 +7,7 @@ from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from threading import Thread
 from playwright.sync_api import sync_playwright
 import subprocess,json,base64
-ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'artifacts/characters/showcase';OUT.mkdir(parents=True,exist_ok=True)
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'artifacts/v12/showcase';OUT.mkdir(parents=True,exist_ok=True)
 class Quiet(SimpleHTTPRequestHandler):
  def log_message(self,*a):pass
 server=ThreadingHTTPServer(('127.0.0.1',0),partial(Quiet,directory=str(ROOT)));Thread(target=server.serve_forever,daemon=True).start()
@@ -28,8 +28,8 @@ with sync_playwright() as pw:
  def capture(event):
   path=frame_dir/f'frame-{len(frames):05}.jpg';path.write_bytes(base64.b64decode(event['data']));frames.append((path,float(event['metadata']['timestamp'])));cdp.send('Page.screencastFrameAck',{'sessionId':event['sessionId']})
  cdp.on('Page.screencastFrame',capture);cdp.send('Page.startScreencast',{'format':'jpeg','quality':88,'maxWidth':1280,'maxHeight':800,'everyNthFrame':1})
- for k,duration in [('d',550),('a',300),('j',170),('j',180),('k',650),('q',250),('Space',200),('j',500),('Shift',600),('l',1100)]:
-  page.keyboard.down(k);page.wait_for_timeout(duration);page.keyboard.up(k);page.wait_for_timeout(140)
+ for k,duration in [('d',550),('a',300),('crawl',700),('j',170),('j',180),('k',650),('q',250),('Space',200),('j',500),('Shift',600),('l',1100)]:
+  page.keyboard.down('ControlLeft') if k=='crawl' else None;page.keyboard.down('d' if k=='crawl' else k);page.wait_for_timeout(duration);page.keyboard.up('d' if k=='crawl' else k);page.keyboard.up('ControlLeft') if k=='crawl' else None;page.wait_for_timeout(140)
  # All four distinct models are rendered inside the actual game, not a mock viewer.
  for cls in range(4):
   page.evaluate(f'HIVEBREAK.start({cls});HIVEBREAK.players[0].x=320;HIVEBREAK.players[0].inv=10000;HIVEBREAK.simulate(210);HIVEBREAK.state.stageBanner=0;HIVEBREAK.state.announceT=0')

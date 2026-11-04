@@ -248,7 +248,7 @@ def author_clips(rig,defs,human,cfg):
    if not human and moving:hip.z-=.03
    shift=hip-hip0;ch=base['chest'][0]+shift;ne=base['neck'][0]+shift;he=base['head'][0]+shift
    if moving and not human:
-    hip.z-=.13 if state=='Crawl' else .07;ch=hip+Vector((.40,0,-.16 if state=='Crawl' else -.08));ne=ch+Vector((.18,0,.12));he=ne+Vector((.10,0,.12))
+    hip.z-=.13 if state=='Crawl' else .07;ch=hip+Vector((.60,0,-.16 if state=='Crawl' else -.08));ne=ch+Vector((.18,0,.12));he=ne+Vector((.10,0,.12))
    if human and moving:
     ch.y+=math.sin(phase)*.018;ne.y-=math.sin(phase)*.009;he.y-=math.sin(phase)*.012
    if attack:ch.x+=strike*.07;ne.x+=strike*.08;he.x+=strike*.10
@@ -277,7 +277,7 @@ def author_clips(rig,defs,human,cfg):
      if moving:hand.x+=math.sin(phase+sign*math.pi/2)*.16;hand.z+=math.cos(phase+sign*math.pi/2)*.035
      if moving:
       ph=(t+(0.5 if side=='L' else 0))%1
-      hand=Vector((hip.x+.55+(.5-ph)*cfg['stride']*.65,sign*.24,.23+max(0,math.sin(ph*TAU))*.13))
+      hand=Vector((hip.x+.85+(.5-ph)*cfg['stride']*.65,sign*.24,.23+max(0,math.sin(ph*TAU))*.13))
      if attack:
       if state=='Light1':hand=shoulder+Vector((.28+strike*.43,sign*(.22-.26*strike),-.13-.10*strike));hand.x-=wind*2
       elif state=='Light2':hand=shoulder+Vector((.24+strike*.42,sign*(.15-.20*strike),.17-.48*strike));hand.x-=wind

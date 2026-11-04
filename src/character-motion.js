@@ -75,7 +75,7 @@ export class CharacterMotion {
   const angular=Math.atan2(Math.sin(target-this.turn),Math.cos(target-this.turn));this.turn+=angular*(dt>0?1-Math.exp(-dt*24):0);
   r.root.position.set(a.x,a.z||0,(a.y-217)*2);r.root.rotation.set(0,this.turn,0);
   const state=this.choose(a,kind),next=this.actions.get(state)||this.actions.get('Idle');
-  if(state!==this.state){this.previousAction=this.active;this.active=next;this.active.reset();this.active.setEffectiveWeight(1);this.active.play();this.previousAction?.fadeOut(.12);this.active.fadeIn(.12);this.state=state;this.poseTime=0;this.feet.clear();this.hands.clear();if(state==='Reload')this.reloadStart=a.reload;}
+  if(state!==this.state){this.previousAction=this.active;this.active=next;this.active.reset();this.active.setEffectiveWeight(1);this.active.play();const blend=a.attack?.055:state==='Hurt'?.05:.16;this.previousAction?.fadeOut(blend);this.active.fadeIn(blend);this.state=state;this.poseTime=0;this.feet.clear();this.hands.clear();if(state==='Reload')this.reloadStart=a.reload;}
   this.poseTime+=dt;
   const moving=state==='Walk'||state==='Run'||state==='Crawl';const distance=Number.isFinite(a.travel)?a.travel:(a.walking||a.walk||0)*9.66;
   const cycle=distance/Math.max(1,this.profile.stride*2*(r.unitScale||44)*(r.modelScale||1));
@@ -115,7 +115,7 @@ export class CharacterMotion {
   if(!this.human&&grounded&&moving){
    const scale=(r.unitScale||44)*(r.modelScale||1),stride=this.profile.stride*scale*.65;
    for(const side of ['L','R']){const phase=(cycle+(side==='L'?.5:0))%1,b=r.bones,arm=b.get('upperArm_'+side),elbow=b.get('forearm_'+side),hand=b.get('hand_'+side),key=side;let plant=this.hands.get(key);
-    const center=new T.Vector3(a.x+face*scale*.55,.23*scale,(a.y-217)*2+(side==='L'?-1:1)*face*scale*.24);
+    const center=new T.Vector3(a.x+face*scale*.85,.23*scale,(a.y-217)*2+(side==='L'?-1:1)*face*scale*.24);
     let target;
     if(phase<.55){if(!plant||!plant.stance){plant={position:point(hand).setY(.23*scale),stance:true};this.hands.set(key,plant)}target=plant.position.clone();if(target.distanceTo(center)>scale*.7){target.copy(center);plant.position.copy(target)}}
     else{const u=(phase-.55)/.45;target=center.add(new T.Vector3(face*(u-.5)*stride,Math.sin(u*Math.PI)*scale*.13,0));this.hands.set(key,{position:target.clone(),stance:false})}

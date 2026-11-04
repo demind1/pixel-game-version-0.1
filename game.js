@@ -416,7 +416,7 @@ function updateAttack(p){if(!p.attack)return;const type=p.attack,atk=ATTACKS[typ
   const b=game.boss;if(type!=='execution'&&b&&!b.dead&&!p.hitTargets.has('boss')){const dx=(b.x-p.x)*p.face;if(dx>-63&&dx<atk.reach+48&&Math.abs(b.y-p.y)<atk.depth+25){p.hitTargets.add('boss');hitBoss(p,atk);}}
   if(t===atk.startup+1){attackProps(p,atk);if(type==='super'){game.flash=12;burst(p.x+p.face*70,p.y-33,CLASS[p.classId].color,50,5);}}
  }
- const end=atk.startup+atk.active+atk.recovery-(traits(p).haste||0);
+ const end=atk.startup+atk.active+atk.recovery-(p.recoveryHaste||0);
  if(t>=end){p.attack=null;p.attackT=0;}
 }
 function applyPlayer(p,input){const oldX=p.x,oldY=p.y;const cls=CLASS[p.classId];if(p.dead){releaseGrab(p);p.inputQueue=null;p.downT++;return;}
