@@ -1,0 +1,23 @@
+{
+  "version": "1.2.0",
+  "source_commit": "cea4ccadb66dc160f3b46c3d21278209b8708e2b",
+  "files": [
+    {
+      "name": "HIVEBREAK_REFORGED_v120.zip",
+      "bytes": 34439292,
+      "sha256": "ac37099cfdd596031d30e33d715c42e33a31847e0cfceaa40b9691757c0257ac"
+    },
+    {
+      "name": "HIVEBREAK_REFORGED_v120_SOURCE.zip",
+      "bytes": 32901442,
+      "sha256": "fc5eea9d6b4f08150267fc753aa26d81ffeb0497adb3e39fdbeb0ab083d35e2e"
+    }
+  ],
+  "standalone_html": {
+    "name": "HIVEBREAK_REFORGED_v120.html",
+    "bytes": 42095309,
+    "sha256": "efa6c14bbb4f326168546be80306854e6de13a8b1a88671a16648c764b08633e"
+  },
+  "zip_crc": "passed",
+  "packaged_html_matches_build": true
+}
