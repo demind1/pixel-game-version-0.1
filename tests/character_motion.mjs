@@ -54,4 +54,6 @@ for(let stage=0;stage<6;stage++){
  assert(parts.length>0);silhouettes.push(JSON.stringify(parts));dispose();model.rig.motion.dispose();
 }
 check('all six bosses retain different skeletal equipment silhouettes',()=>assert.equal(new Set(silhouettes).size,6));
+check('quadruped foreleg remains planted while the torso moves',()=>{a.attack=null;a.moveX=1;a.travel=0;a.x=200;step(.5);step(.2);const p=pos('hand_R');assert.equal(rig.motion.hands.size,2);for(let i=0;i<6;i++){a.x+=.4;a.travel+=.4;step()}assert(pos('hand_R').distanceTo(p)<.5);});
+check('slow crawling selects a separate low animation',()=>{a.crawling=true;step(.2);assert.equal(rig.motion.debug.clip,'Crawl');assert(pos('chest').y<40);});
 console.log('PASS',passed,'real-asset skeletal and motion checks');

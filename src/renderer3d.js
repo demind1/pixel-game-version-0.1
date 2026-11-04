@@ -6,6 +6,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),TAU=Math.PI*2;
@@ -30,7 +31,7 @@ class HiveRenderer {
   this.scene=new T.Scene();this.scene.background=new T.Color(0x06101a);
   this.camera=new T.PerspectiveCamera(23.8,16/9,2,1800);
   this.scene.add(new T.HemisphereLight(0xa1c7e7,0x151c20,1.0));
-  const pmrem=new T.PMREMGenerator(this.renderer);const room=new RoomEnvironment();this.environment=pmrem.fromScene(room,.04);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.4;room.dispose();pmrem.dispose();
+  const pmrem=new T.PMREMGenerator(this.renderer);const room=new RoomEnvironment();this.environment=pmrem.fromScene(room,.04);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.52;room.dispose();pmrem.dispose();
   this.key=new T.DirectionalLight(0xc9e7ff,2.7);this.key.castShadow=true;this.key.shadow.mapSize.set(1024,1024);
   Object.assign(this.key.shadow.camera,{left:-310,right:310,top:270,bottom:-170,near:1,far:900});this.key.shadow.normalBias=.4;this.key.shadow.bias=-.0001;
   this.scene.add(this.key,this.key.target);
@@ -45,7 +46,7 @@ class HiveRenderer {
   this.grain=new T.DataTexture(grain,128,128);this.grain.wrapS=this.grain.wrapT=T.RepeatWrapping;this.grain.magFilter=T.LinearFilter;this.grain.minFilter=T.LinearFilter;this.grain.needsUpdate=true;
 
   this.composer=new EffectComposer(this.renderer);this.composer.addPass(new RenderPass(this.scene,this.camera));
-  this.bloom=new UnrealBloomPass(new T.Vector2(960,540),.42,.55,1.0);this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
+  this.bloom=new UnrealBloomPass(new T.Vector2(960,540),.42,.55,1.0);this.composer.addPass(this.bloom);this.pixelPass=new ShaderPass({uniforms:{tDiffuse:{value:null},resolution:{value:new T.Vector2(960,540)},amount:{value:1}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 resolution;uniform float amount;varying vec2 vUv;void main(){vec2 uv=mix(vUv,(floor(vUv*resolution/1.35)+.5)*1.35/resolution,amount);vec3 c=texture2D(tDiffuse,uv).rgb;float d=fract(sin(dot(floor(vUv*resolution),vec2(12.9898,78.233)))*43758.5453)-.5;c=mix(c,floor(c*96.+d*.25)/96.,amount*.25);float vignette=smoothstep(.8,.22,length(vUv-.5));gl_FragColor=vec4(c*mix(.88,1.,vignette),1.);}`});this.composer.addPass(this.pixelPass);this.composer.addPass(new OutputPass());
   this.particles=new T.InstancedMesh(this.geo.sphere,new T.MeshBasicMaterial({color:0xffffff,toneMapped:false}),540);
   this.particles.instanceMatrix.setUsage(T.DynamicDrawUsage);this.particles.frustumCulled=false;this.effects.add(this.particles);
   const dustPositions=new Float32Array(72*3);for(let i=0;i<72;i++){dustPositions[i*3]=(i*71)%700;dustPositions[i*3+1]=10+(i*37)%140;dustPositions[i*3+2]=-90+(i*19)%150}const dustGeometry=new T.BufferGeometry();dustGeometry.setAttribute('position',new T.BufferAttribute(dustPositions,3));this.dust=new T.Points(dustGeometry,new T.PointsMaterial({color:0x98cbd6,size:1.2,transparent:true,opacity:.22,depthWrite:false}));this.scene.add(this.dust);
@@ -76,7 +77,7 @@ class HiveRenderer {
   const wall=this.material(p.base,.74,.43),steel=this.material(p.trim,.8,.3),dark=this.material(0x0b151d,.65,.47),light=this.material(p.light,.25,.3,p.light,3),amber=this.material(p.accent,.25,.3,p.accent,2.3);
   // A real mirrored render pass. Characters, moving equipment and muzzle light
   // appear in the floor from the reflected camera; no flipped 2D screenshot.
-  const reflector=new Reflector(new T.PlaneGeometry(len+1200,480),{textureWidth:512,textureHeight:256,color:0x344855,multisample:0,clipBias:.002});
+  const reflector=new Reflector(new T.PlaneGeometry(len+1200,480),{textureWidth:this.quality===2?1280:768,textureHeight:this.quality===2?640:384,color:0x344855,multisample:0,clipBias:.002});
   reflector.rotation.x=-Math.PI/2;reflector.position.set(len/2,-.06,20);
   reflector.material.fragmentShader=reflector.material.fragmentShader.replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',`
     vec2 uv = vUv.xy / vUv.w;
@@ -179,7 +180,7 @@ class HiveRenderer {
   let r=this.rigs.get(key);const modelKey=kind+':'+(actor.classId??actor.type??this.stage);if(r&&r.modelKey!==modelKey){r.dispose?.();r.root.removeFromParent();this.rigs.delete(key);r=null}if(r)return r;
   if(kind==='player'||kind==='boss'||!['drone','turret'].includes(actor.type)){
    if(!this.characters.ready)return null;
-   const id=kind==='player'?['drone','warrior','runner','praetorian'][actor.classId]:kind==='boss'?(this.stage===3||this.stage===4?'marine':this.stage===0?'warrior':'praetorian'):'marine';
+   const id=kind==='player'?['drone','warrior','runner','praetorian'][actor.classId]:kind==='boss'?(this.stage===3||this.stage===4?'marine':this.stage===0?'warrior':this.stage===2?'queen':'praetorian'):'marine';
    const scale=kind==='player'?this.config.classes[actor.classId].scale:kind==='boss'?(this.stage>=3?1.9:1.8):(this.config.enemies[actor.type]?.scale||1);
    r=this.characters.create(id,kind,actor.type,scale,kind==='boss'?this.stage:null);r.root.scale.setScalar(scale);r.modelKey=modelKey;r.kind=kind;
    this.skeletalActors.add(r.root);this.rigs.set(key,r);return r;
@@ -205,14 +206,14 @@ class HiveRenderer {
  }
  setQuality(settings){
   const q=settings.quality3d??1;const width=q===2?Math.min(2560,Math.max(960,Math.floor((window.innerWidth-24)/16)*16)):[640,960][q];if(q===this.quality&&this.canvas.width===width)return;this.quality=q;
-  this.renderer.setSize(width,width*9/16,false);this.composer.setSize(width,width*9/16);
+  this.renderer.setSize(width,width*9/16,false);this.composer.setSize(width,width*9/16);this.pixelPass.uniforms.resolution.value.set(width,width*9/16);if(this.mirror)this.mirror.getRenderTarget().setSize(q===2?1280:768,q===2?640:384);
   this.renderer.shadowMap.enabled=q>0;this.key.shadow.mapSize.set(q===2?1024:512,q===2?1024:512);this.bloom.enabled=q>0;
  }
  render(g,settings,menu=false){
   if(this.failed||this.lost)return null;
   this.setQuality(settings);if(this.stage!==g.level)this.buildStage(g.level);
   const t=g.tick/60;this.clock=t;this.mirror.visible=settings.reflections!==false&&this.quality>0;
-  this.bloom.strength=settings.bloom===false?0:.38;
+  this.bloom.strength=settings.bloom===false?0:.44;this.pixelPass.uniforms.amount.value=settings.pixelization===false?0:1;
   this.dust.position.x=g.camera-80;this.dust.position.y=Math.sin(t*.2)*4;this.dust.visible=settings.ambient>0;
   const cx=g.camera+240,shake=settings.shake?g.shake||0:0;
   this.camera.position.set(cx+Math.sin(t*53)*shake*.2,385+Math.sin(t*47)*shake*.15,600);
@@ -232,7 +233,7 @@ class HiveRenderer {
   if(menu){const rig=this.rigs.get('p0');if(rig)rig.root.rotation.y=Math.PI+.3+Math.sin(g.tick*.006)*.2}
   this.drawDynamic(g,t,settings);this.batchActors();
   this.renderer.info.reset();this.composer.render();
-  this.stats={backend:'WebGL2',quality:this.quality,resolution:[this.canvas.width,this.canvas.height],drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,rigs:this.rigs.size,reflections:this.mirror.visible,stage:g.level,boss:!!g.boss,charactersReady:this.characters.ready,skinned:[...this.rigs.values()].filter(r=>r.skeletal).length,revision:'1.1'};
+  this.stats={backend:'WebGL2',quality:this.quality,resolution:[this.canvas.width,this.canvas.height],drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,rigs:this.rigs.size,reflections:this.mirror.visible,stage:g.level,boss:!!g.boss,charactersReady:this.characters.ready,skinned:[...this.rigs.values()].filter(r=>r.skeletal).length,revision:'1.2'};
   return this.canvas;
  }
  drawDynamic(g,t,settings){

@@ -11,7 +11,7 @@ function alignBone(bone,child,target){
 }
 export function solveLeg(hip,knee,ankle,target,pole){
  const a=point(hip),b=point(knee),c=point(ankle),l1=a.distanceTo(b),l2=b.distanceTo(c),v=target.clone().sub(a);
- const d=clamp(v.length(),.001,l1+l2-.002),axis=v.normalize(),u=pole.clone().sub(a);u.addScaledVector(axis,-u.dot(axis));if(u.lengthSq()<1e-5)u.set(1,0,0);u.normalize();
+ const d=clamp(v.length(),Math.abs(l1-l2)+.002,l1+l2-.002),axis=v.normalize(),u=pole.clone().sub(a);u.addScaledVector(axis,-u.dot(axis));if(u.lengthSq()<1e-5)u.set(1,0,0);u.normalize();
  const h=(l1*l1-l2*l2+d*d)/(2*d),bend=Math.sqrt(Math.max(0,l1*l1-h*h));
  const joint=a.clone().addScaledVector(axis,h).addScaledVector(u,bend);alignBone(hip,knee,joint);alignBone(knee,ankle,target);
  return point(ankle).distanceTo(target);
@@ -53,7 +53,7 @@ export class CharacterMotion {
  constructor(rig,clips,profile,human=false){
   this.rig=rig;this.human=human;this.profile=profile;this.mixer=new T.AnimationMixer(rig.model);this.actions=new Map();
   for(const clip of clips){const action=this.mixer.clipAction(clip);action.setEffectiveWeight(0);action.play();this.actions.set(clip.name,action)}
-  this.state='';this.lastTime=null;this.turn=0;this.previousFace=1;this.feet=new Map();this.tail=new TailDynamics(rig.tail);this.lastDistance=0;this.poseTime=0;this.footErrors=[];this.debug={};
+  this.state='';this.lastTime=null;this.turn=0;this.previousFace=1;this.hands=new Map();this.feet=new Map();this.tail=new TailDynamics(rig.tail);this.lastDistance=0;this.poseTime=0;this.footErrors=[];this.debug={};
   this.legLengths=new Map();for(const side of ['L','R']){const b=rig.bones;this.legLengths.set(side,{hip:b.get('thigh_'+side),knee:b.get('shin_'+side),ankle:b.get('foot_'+side)})}
  }
  choose(a,kind){
@@ -65,22 +65,22 @@ export class CharacterMotion {
   if(a.grabTarget)return 'Grab';if(a.heldBy)return 'Hurt';
   if(this.human){if(a.reload>0)return 'Reload';if(a.fire>0)return 'Fire';if(a.wind>0)return 'Aim'}
   const moving=Math.hypot(a.moveX||a.motionVX||0,a.moveY||a.motionVY||0)>.08||['approach','retreat','flank'].includes(a.ai);
-  if(moving)return !this.human&&a.classId===2?'Run':'Walk';return this.human?'Aim':'Idle';
+  if(moving&&a.crawling&&!this.human)return 'Crawl';if(moving)return !this.human&&a.classId===2?'Run':'Walk';return this.human?'Aim':'Idle';
  }
  update(a,time,attacks,kind){
-  const r=this.rig;let dt=this.lastTime===null?0:Math.max(0,time-this.lastTime);if(dt>.4){this.feet.clear();this.tail.reset();dt=.0833}this.lastTime=time;
+  const r=this.rig;let dt=this.lastTime===null?0:Math.max(0,time-this.lastTime);if(dt>.4){this.feet.clear();this.hands.clear();this.tail.reset();dt=.0833}this.lastTime=time;
   const face=a.face===-1?-1:1,target=face===-1?Math.PI:0;
   if(this.state===''){this.turn=target;this.previousFace=face}
-  if(face!==this.previousFace){this.feet.clear();this.tail.reset();this.previousFace=face}
+  if(face!==this.previousFace){this.feet.clear();this.hands.clear();this.tail.reset();this.previousFace=face}
   const angular=Math.atan2(Math.sin(target-this.turn),Math.cos(target-this.turn));this.turn+=angular*(dt>0?1-Math.exp(-dt*24):0);
   r.root.position.set(a.x,a.z||0,(a.y-217)*2);r.root.rotation.set(0,this.turn,0);
   const state=this.choose(a,kind),next=this.actions.get(state)||this.actions.get('Idle');
-  if(state!==this.state){this.previousAction=this.active;this.active=next;this.active.reset();this.active.setEffectiveWeight(1);this.active.play();this.previousAction?.fadeOut(.07);this.active.fadeIn(.07);this.state=state;this.poseTime=0;this.feet.clear();if(state==='Reload')this.reloadStart=a.reload;}
+  if(state!==this.state){this.previousAction=this.active;this.active=next;this.active.reset();this.active.setEffectiveWeight(1);this.active.play();this.previousAction?.fadeOut(.12);this.active.fadeIn(.12);this.state=state;this.poseTime=0;this.feet.clear();this.hands.clear();if(state==='Reload')this.reloadStart=a.reload;}
   this.poseTime+=dt;
-  const moving=state==='Walk'||state==='Run';const distance=Number.isFinite(a.travel)?a.travel:(a.walking||a.walk||0)*9.66;
+  const moving=state==='Walk'||state==='Run'||state==='Crawl';const distance=Number.isFinite(a.travel)?a.travel:(a.walking||a.walk||0)*9.66;
   const cycle=distance/Math.max(1,this.profile.stride*2*(r.unitScale||44)*(r.modelScale||1));
   if(moving)this.active.time=(cycle%1)*this.active.getClip().duration;
-  else if(a.attack){const atk=attacks[a.attack],n=atk.startup+atk.active+atk.recovery;this.active.time=clamp(a.attackT/n,0,.999)*this.active.getClip().duration;}
+  else if(a.attack){const atk=attacks[a.attack],n=atk.startup+atk.active+atk.recovery-(a.recoveryHaste||0);this.active.time=clamp(a.attackT/n,0,.999)*this.active.getClip().duration;}
   else if(a.motionClip&&(a.wind>0||a.motionRecover>0)){const phase=a.wind>0?(1-a.wind/Math.max(1,a.motionWind||a.wind))*.40:.40+(1-a.motionRecover/(kind==='boss'?24:18))*.599;this.active.time=clamp(phase,0,.999)*this.active.getClip().duration;}
   else if(state==='Reload')this.active.time=(1-(a.reload||0)/this.reloadStart)*this.active.getClip().duration;
   else if(state==='Fire')this.active.time=(1-(a.fire||0)/8)*this.active.getClip().duration;
@@ -109,7 +109,19 @@ export class CharacterMotion {
      this.footErrors.push(solveLeg(hip,knee,ankle,target,point(hip).add(new T.Vector3(face*25,0,0))));
     }
    }
-  }else this.feet.clear();
+  }else {this.feet.clear();this.hands.clear();}
+  r.root.updateMatrixWorld(true);
+  // Diagonal quadruped support: forelegs alternate against the opposite hind legs.
+  if(!this.human&&grounded&&moving){
+   const scale=(r.unitScale||44)*(r.modelScale||1),stride=this.profile.stride*scale*.65;
+   for(const side of ['L','R']){const phase=(cycle+(side==='L'?.5:0))%1,b=r.bones,arm=b.get('upperArm_'+side),elbow=b.get('forearm_'+side),hand=b.get('hand_'+side),key=side;let plant=this.hands.get(key);
+    const center=new T.Vector3(a.x+face*scale*.55,.23*scale,(a.y-217)*2+(side==='L'?-1:1)*face*scale*.24);
+    let target;
+    if(phase<.55){if(!plant||!plant.stance){plant={position:point(hand).setY(.23*scale),stance:true};this.hands.set(key,plant)}target=plant.position.clone();if(target.distanceTo(center)>scale*.7){target.copy(center);plant.position.copy(target)}}
+    else{const u=(phase-.55)/.45;target=center.add(new T.Vector3(face*(u-.5)*stride,Math.sin(u*Math.PI)*scale*.13,0));this.hands.set(key,{position:target.clone(),stance:false})}
+    solveLeg(arm,elbow,hand,target,point(arm).add(new T.Vector3(-face*10,0,side==='L'?-15:15)));
+   }
+  }else this.hands.clear();
   r.root.updateMatrixWorld(true);if(r.tail.length)this.tail.update(dt,state==='Heavy'||state==='Ultimate');
   if(r.flash)r.flash.visible=!!a.fire;
   if(r.slash){r.slash.visible=!!a.attack&&a.attackT>=attacks[a.attack].startup&&a.attackT<attacks[a.attack].startup+attacks[a.attack].active;r.slash.scale.setScalar(16);r.slash.position.set(25,35,0)}

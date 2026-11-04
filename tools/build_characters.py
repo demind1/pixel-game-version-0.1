@@ -13,6 +13,7 @@ PROFILES={
  'warrior':dict(width=1.22,bulk=1.2,head=1.04,low=.08,stride=.82,step=1.05,tail=2.0),
  'runner':dict(width=.83,bulk=.83,head=.94,low=.30,stride=1.18,step=.62,tail=2.4),
  'praetorian':dict(width=1.36,bulk=1.28,head=1.16,low=-.09,stride=.78,step=1.18,tail=2.0),
+ 'queen':dict(width=1.50,bulk=1.4,head=1.30,low=-.02,stride=.80,step=1.2,tail=2.55),
  'marine':dict(width=1,bulk=1,head=1,low=0,stride=.76,step=.94,tail=0)
 }
 
@@ -20,9 +21,9 @@ def mat(name,color,metal=0,rough=.5):
  m=bpy.data.materials.new(name);m.diffuse_color=(*color,1);m.use_nodes=True
  p=m.node_tree.nodes.get('Principled BSDF');p.inputs['Base Color'].default_value=(*color,1);p.inputs['Metallic'].default_value=metal;p.inputs['Roughness'].default_value=rough
  if name in ['Dark blue chitin','Olive combat fabric','Organic undercarapace']:
-  im=bpy.data.images.new(name+' normal detail',width=128,height=128,alpha=False);pixels=[]
-  for y in range(128):
-   for x in range(128):
+  im=bpy.data.images.new(name+' normal detail',width=256,height=256,alpha=False);pixels=[]
+  for y in range(256):
+   for x in range(256):
     if 'fabric' in name:dx=.14*math.sin(x*math.pi/2);dy=.14*math.sin(y*math.pi/2)
     else:dx=.065*math.sin(x*.61+y*.17);dy=.065*math.cos(y*.57-x*.13)
     pixels.extend((.5+dx,.5+dy,.99,1))
@@ -126,9 +127,9 @@ def make_surface(rig,defs,human,cfg,mats):
  bpy.ops.object.select_all(action='DESELECT')
  for o in flesh:o.select_set(True)
  bpy.context.view_layer.objects.active=flesh[0];bpy.ops.object.join();body=bpy.context.object;body.name='ContinuousAnatomicalSkin'
- body.data.remesh_voxel_size=.032 if human else .027;bpy.ops.object.voxel_remesh()
+ body.data.remesh_voxel_size=.022 if human else .024;bpy.ops.object.voxel_remesh()
  sm=body.modifiers.new('Organic junction blending','SMOOTH');sm.factor=.55;sm.iterations=3;bpy.ops.object.modifier_apply(modifier=sm.name)
- de=body.modifiers.new('Game topology budget','DECIMATE');de.ratio=.62;bpy.ops.object.modifier_apply(modifier=de.name)
+ de=body.modifiers.new('Game topology budget','DECIMATE');de.ratio=.72;bpy.ops.object.modifier_apply(modifier=de.name)
  # Voxel remesh uses the base suit/skin material; face regions are separate detailed surfaces.
  body.data.materials.clear();body.data.materials.append(cloth if human else skin)
  for f in body.data.polygons:f.use_smooth=True
@@ -222,7 +223,7 @@ def ik(a,c,l1,l2,pole):
  u.normalize();along=(l1*l1-l2*l2+dist*dist)/(2*dist);height=math.sqrt(max(0,l1*l1-along*along));return a+axis*along+u*height
 
 def author_clips(rig,defs,human,cfg):
- clips={'Idle':2.4,'Walk':cfg['step'],'Run':.62 if not human else .72,'Light1':.36,'Light2':.39,'Light3':.52,'Heavy':.65,'Launcher':.48,'Air':.48,'Jump':.8,'Dash':.30,'Landing':.24,'Parry':.35,'Special':.70,'Ultimate':.85,'Grab':.55,'Throw':.52,'Hurt':.40,'Death':1.25,'Victory':1.8}
+ clips={'Idle':2.4,'Walk':cfg['step'],'Crawl':1.4,'Run':.62 if not human else .72,'Light1':.36,'Light2':.39,'Light3':.52,'Heavy':.65,'Launcher':.48,'Air':.48,'Jump':.8,'Dash':.30,'Landing':.24,'Parry':.35,'Special':.70,'Ultimate':.85,'Grab':.55,'Throw':.52,'Hurt':.40,'Death':1.25,'Victory':1.8}
  if human:clips.update({'Aim':2.0,'Fire':.17,'Reload':1.45})
  rig.animation_data_create();base_rest={b.name:b.matrix_local.copy() for b in rig.data.bones};base={n:(a.copy(),b.copy(),parent) for n,(a,b,parent) in defs.items()}
  def smooth(x):x=max(0,min(1,x));return x*x*(3-2*x)
@@ -233,7 +234,7 @@ def author_clips(rig,defs,human,cfg):
   for frame in times:
    t=frame/frames;phase=t*TAU;pos={n:(a.copy(),b.copy()) for n,(a,b,_) in base.items()}
    hip0=base['hips'][0];hip=hip0.copy();forward=Vector((1,0,0));strike=0;torso_twist=0
-   moving=state in ['Walk','Run'];attack=state in ['Light1','Light2','Light3','Heavy','Launcher','Air','Special','Ultimate','Grab','Throw']
+   moving=state in ['Walk','Run','Crawl'];attack=state in ['Light1','Light2','Light3','Heavy','Launcher','Air','Special','Ultimate','Grab','Throw']
    # Five key portions: anticipation, acceleration, contact, follow-through, recovery.
    strike=smooth(t/.32)*(1-smooth((t-.47)/.53)) if attack else 0
    wind=math.sin(min(1,t/.27)*math.pi)*.12 if attack and t<.27 else 0
@@ -246,10 +247,16 @@ def author_clips(rig,defs,human,cfg):
    if human and state not in ['Death','Jump']:hip.z-=.14
    if not human and moving:hip.z-=.03
    shift=hip-hip0;ch=base['chest'][0]+shift;ne=base['neck'][0]+shift;he=base['head'][0]+shift
-   if state=='Run' and not human:ch.x+=.11;ch.z-=.07;ne.x+=.14;ne.z-=.11;he.x+=.16;he.z-=.14
+   if moving and not human:
+    hip.z-=.13 if state=='Crawl' else .07;ch=hip+Vector((.40,0,-.16 if state=='Crawl' else -.08));ne=ch+Vector((.18,0,.12));he=ne+Vector((.10,0,.12))
+   if human and moving:
+    ch.y+=math.sin(phase)*.018;ne.y-=math.sin(phase)*.009;he.y-=math.sin(phase)*.012
    if attack:ch.x+=strike*.07;ne.x+=strike*.08;he.x+=strike*.10
    if state=='Hurt':ch.x-=.13*math.sin(math.pi*t);he.x-=.2*math.sin(math.pi*t)
-   if state=='Death':ch.z-=smooth(t)*.34;he.z-=smooth(t)*.56;he.x+=smooth(t)*.24
+   if state=='Death':
+    ch.z-=smooth(t)*.34;he.z-=smooth(t)*.56;he.x+=smooth(t)*.24
+    if human:
+     fall=smooth(t);hip.z=hip.z*(1-fall)+.14*fall;ch=ch.lerp(hip+Vector((.34,.03,.015)),fall);ne=ne.lerp(ch+Vector((.12,.02,0)),fall);he=he.lerp(ne+Vector((.15,0,-.02)),fall)
    pos['hips']=(hip,(hip+ch)/2);pos['spine']=((hip+ch)/2,ch);pos['chest']=(ch,ne);pos['neck']=(ne,he);pos['head']=(he,he+Vector((.38,0,-.03*strike)))
    for side,sign in [('L',1),('R',-1)]:
     shoulder=ch+Vector((-.01,sign*(.225 if human else .215*cfg['width']),-.005));shoulder.x+=sign*torso_twist*.13
@@ -264,10 +271,13 @@ def author_clips(rig,defs,human,cfg):
       else:hand=shoulder+Vector((.20+strike*.36,sign*.11,-.13))
       hand.x-=wind
      if moving:hand.z-=.04;hand.x-=.03
+     if state=='Death':hand=hand.lerp(shoulder+Vector((.12,sign*.24,-.02)),smooth(t))
     else:
      hand=shoulder+Vector((.43,sign*.09,-.43));elbow_pole=shoulder+Vector((-.10,sign*.16,-.25))
      if moving:hand.x+=math.sin(phase+sign*math.pi/2)*.16;hand.z+=math.cos(phase+sign*math.pi/2)*.035
-     if state=='Run':hand=shoulder+Vector((.43+math.sin(phase+sign)*.23,sign*.12,-.56))
+     if moving:
+      ph=(t+(0.5 if side=='L' else 0))%1
+      hand=Vector((hip.x+.55+(.5-ph)*cfg['stride']*.65,sign*.24,.23+max(0,math.sin(ph*TAU))*.13))
      if attack:
       if state=='Light1':hand=shoulder+Vector((.28+strike*.43,sign*(.22-.26*strike),-.13-.10*strike));hand.x-=wind*2
       elif state=='Light2':hand=shoulder+Vector((.24+strike*.42,sign*(.15-.20*strike),.17-.48*strike));hand.x-=wind
@@ -325,7 +335,7 @@ def author_clips(rig,defs,human,cfg):
     bone=rig.data.bones[n];rest_local=base_rest[parent].inverted()@base_rest[n] if parent else base_rest[n];posed_local=pose_mats[parent].inverted()@desired if parent else desired;pb.matrix_basis=rest_local.inverted()@posed_local
     pb.keyframe_insert('location',frame=frame);pb.keyframe_insert('rotation_quaternion',frame=frame)
   for fc in action.fcurves:
-   for key in fc.keyframe_points:key.interpolation='LINEAR'
+   for key in fc.keyframe_points:key.interpolation='BEZIER';key.handle_left_type='AUTO_CLAMPED';key.handle_right_type='AUTO_CLAMPED'
   track=rig.animation_data.nla_tracks.new();track.name=state;strip=track.strips.new(state,0,action);strip.name=state;track.mute=True
  rig.animation_data.action=None
  return list(clips)
@@ -350,6 +360,15 @@ def build(name,cfg):
  bpy.context.scene.frame_set(0)
  out=OUT/f'character_{name}.glb'
  bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_skins=True,export_all_influences=False,export_optimize_animation_size=True,export_anim_single_armature=True)
+ if not human:
+  rig.animation_data.action=bpy.data.actions.get('Idle');bpy.context.scene.frame_set(10)
+  scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=16;scene.cycles.use_denoising=False;scene.render.resolution_x=320;scene.render.resolution_y=256;scene.render.resolution_percentage=100
+  world=bpy.data.worlds.new('Portrait studio');world.use_nodes=True;world.node_tree.nodes['Background'].inputs[0].default_value=(.025,.055,.075,1);world.node_tree.nodes['Background'].inputs[1].default_value=.4;scene.world=world
+  for location,power,color,size in [((2,-3,4),450,(.45,.85,1),3),((-2,2,3),650,(.12,1,.85),2),((3,2,2),180,(1,.65,.3),2)]:
+   data=bpy.data.lights.new('Studio softbox','AREA');data.energy=power;data.color=color;data.shape='DISK';data.size=size;o=bpy.data.objects.new('Studio softbox',data);scene.collection.objects.link(o);o.location=location;o.rotation_euler=(Vector((0,0,1.1))-o.location).to_track_quat('-Z','Y').to_euler()
+  data=bpy.data.cameras.new('PortraitCamera');camera=bpy.data.objects.new('PortraitCamera',data);scene.collection.objects.link(camera);camera.location=(3,-4,2.5);camera.rotation_euler=(Vector((.1,0,1.25))-camera.location).to_track_quat('-Z','Y').to_euler();data.type='ORTHO';data.ortho_scale=2.25;scene.camera=camera
+  scene.render.image_settings.file_format='PNG';scene.render.filepath=str(OUT/f'portrait_{name}.png');bpy.ops.render.render(write_still=True)
+  rig.animation_data.action=None
  print('CHARACTER_EXPORT',name,out.stat().st_size,'vertices',len(character.data.vertices),'polygons',len(character.data.polygons),'bones',len(defs),'clips',animations,flush=True)
  return dict(file=out.name,vertices=len(character.data.vertices),polygons=len(character.data.polygons),bones=len(defs),clips=animations,profile=cfg,scale=44)
 
