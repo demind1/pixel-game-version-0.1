@@ -14,7 +14,7 @@ with sync_playwright() as pw:
  def route(r):
   if r.request.url=='http://offline.test/':r.fulfill(path=str(a.html),content_type='text/html')
   else:requests.append(r.request.url);r.abort()
- page.route('**/*',route);page.goto('http://offline.test/')
+ page.route('**/*',route);page.goto('http://offline.test/',wait_until='domcontentloaded',timeout=120000)
  page.wait_for_function('HIVEBREAK.ready && HIVEBREAK.renderer.active',timeout=120000)
  check('latest standalone release boots in 3D offline',not requests)
  page.keyboard.press('ArrowDown');page.keyboard.press('Enter');page.wait_for_function('HIVEBREAK.coop && HIVEBREAK.screen==="select"')

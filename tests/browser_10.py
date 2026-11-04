@@ -79,12 +79,13 @@ with sync_playwright() as pw:
  fallback.goto(base);fallback.wait_for_function('HIVEBREAK.ready')
  fallback.keyboard.press('Enter');fallback.keyboard.press('Enter');fallback.wait_for_function('HIVEBREAK.screen==="playing"')
  check('denied WebGL keeps 2D campaign playable',not fallback.evaluate('HIVEBREAK.renderer.active'))
+ page.close();fallback.close()
  if args.portable:
   p=b.new_page(viewport={'width':1280,'height':800});p.add_init_script(hook);requests=[]
   def fulfill(route):
    if route.request.url=='http://portable.test/':route.fulfill(path=str(args.portable),content_type='text/html')
    else:requests.append(route.request.url);route.abort()
-  p.route('**/*',fulfill);p.goto('http://portable.test/');p.wait_for_function('HIVEBREAK.ready && HIVEBREAK.renderer.active',timeout=120000)
+  p.route('**/*',fulfill);p.goto('http://portable.test/',wait_until='domcontentloaded',timeout=120000);p.wait_for_function('HIVEBREAK.ready && HIVEBREAK.renderer.active',timeout=120000)
   p.keyboard.press('Enter');p.keyboard.press('Enter');p.wait_for_function('HIVEBREAK.screen==="playing"');check('portable HTML runs 3D without external requests',not requests)
  result={'passed':len(checks),'checks':checks,'errors':errors,'missing':missing,'GPU':'Chromium software WebGL (SwiftShader)'}
  (args.output/'results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2));b.close()
