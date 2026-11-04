@@ -38,7 +38,13 @@ with sync_playwright() as pw:
   check(f'class {cls+1} remains playable with skinned animation',page.evaluate('HIVEBREAK.renderer.skinned')>=1 and page.evaluate('HIVEBREAK.screen')=='playing')
  page.wait_for_timeout(200)
  check('recorded movement and attacks have no uncaught errors',not errors)
- cdp.send('Page.stopScreencast');context.close();b.close()
+ cdp.send('Page.stopScreencast')
+ page.set_viewport_size({'width':1600,'height':1000})
+ page.evaluate('HIVEBREAK.start(0);HIVEBREAK.configure({quality3d:2});HIVEBREAK.players[0].x=320;HIVEBREAK.players[0].inv=10000;HIVEBREAK.simulate(210);HIVEBREAK.state.stageBanner=0;HIVEBREAK.state.announceT=0')
+ page.wait_for_function('HIVEBREAK.renderer.quality===2 && HIVEBREAK.renderer.resolution[0]===1568 && HIVEBREAK.renderer.skinned>=3',timeout=60000)
+ page.screenshot(path=str(OUT/'maximum-character-detail.png'))
+ check('final maximum-quality character scene renders without errors',not errors)
+ context.close();b.close()
 check('browser supplied actual video frames',len(frames)>10)
 concat=OUT/'frames.txt'
 with concat.open('w') as f:

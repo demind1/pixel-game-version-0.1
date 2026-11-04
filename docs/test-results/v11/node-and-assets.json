@@ -1,0 +1,11 @@
+{
+  "engine_scenarios": 33,
+  "campaign_scenarios": 19,
+  "skeletal_asset_scenarios": 13,
+  "campaign_waves": 30,
+  "audio": "passed, including music style switch and pause silence",
+  "font_and_legacy_atlases": "passed",
+  "rock_audio": "12 files: SHA-256 and full ffmpeg decode passed",
+  "syntax": "game.js, renderer source and motion modules: passed",
+  "environment": "Node 24, Blender 4.3.2, ffmpeg; browser results stored separately"
+}
